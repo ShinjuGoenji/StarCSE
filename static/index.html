@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Test</title>
+</head>
+
+<body>
+    <h2>Upload test.txt</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput" accept=".txt" />
+        <button type="submit">Upload</button>
+    </form>
+
+    <pre id="response"></pre>
+
+    <script>
+        document.getElementById("uploadForm").onsubmit = async function (e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append("file", document.getElementById("fileInput").files[0]);
+
+            const res = await fetch("/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+            document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+
+</html>
