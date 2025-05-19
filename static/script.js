@@ -1,5 +1,5 @@
 
-const backendUrl = 'https://oasis-star-api.onrender.com';
+const backendUrl = 'https://starcse.onrender.com';
 // const backendUrl = 'https://d18d-140-113-212-14.ngrok-free.app/'
 
 // 檢查登入狀態
