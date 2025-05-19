@@ -1,51 +1,50 @@
-import base64
-import bcrypt
-import pyotp
-from fastapi import (
-    FastAPI,
-    HTTPException,
-    Depends,
-    status,
-    UploadFile,
-    File,
-    Form,
-    Request,
-)
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
-from dotenv import load_dotenv
-from sqlalchemy import select
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from db import Base, User
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from typing import List
 import os
-
-# 讀取 .env 檔案
-load_dotenv()
-
-# 取得環境變數
-DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_async_engine(DATABASE_URL, echo=True)
-async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+import shutil
+import hashlib
+import pyotp
+import base64
+import qrcode
+from io import BytesIO
 
 app = FastAPI()
 
-# CORS 設定
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 改為你的前端網址會更安全
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 靜態檔案與模板
+# 靜態資源、模板
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# 檔案資料夾
+BASE_UPLOAD_FOLDER = "uploads"
+ENCRYPT_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, "encrypt")
+DECRYPT_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, "decrypt")
+os.makedirs(ENCRYPT_FOLDER, exist_ok=True)
+os.makedirs(DECRYPT_FOLDER, exist_ok=True)
+
+# 模擬用「資料庫」：字典形式存帳號資訊（實務要用真DB）
+users_db = {}
+
+
+# 工具：密碼雜湊（SHA256）
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+# 工具：產生 Google Authenticator 秘鑰和 QR Code URL
+def generate_otp_secret_and_qr(username: str):
+    secret = pyotp.random_base32()
+    # 產生 provisioning URI
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name="StarCSE")
+    # 產生 QR code 圖片
+    qr = qrcode.make(uri)
+    buffered = BytesIO()
+    qr.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    qr_data_url = f"data:image/png;base64,{img_str}"
+    return secret, qr_data_url
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -53,160 +52,87 @@ async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-# Pydantic schemas
-class UserRegister(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-    otp: str
-
-
-@app.on_event("startup")
-async def startup():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
 @app.post("/api/register")
-async def register(request: Request):
-    data = await request.json()  # 先讀資料
-    print("📥 Received JSON:", data)  # Log 印出
+async def register(data: dict):
+    email = data.get("email")
+    username = data.get("username")
+    password = data.get("password")
 
-    try:
-        user = UserRegister(**data)  # 手動交給 Pydantic 驗證
-    except ValidationError as e:
-        print("❌ Validation Error:", e.errors())
-        raise HTTPException(status_code=422, detail=e.errors())
+    if not email or not username or not password:
+        return JSONResponse(status_code=400, content={"message": "Missing fields"})
 
-    async with async_session() as session:
-        exists_username = await session.execute(
-            select(User).where(User.username == user.username)
+    if username in users_db:
+        return JSONResponse(
+            status_code=400, content={"message": "Username already exists"}
         )
-        if exists_username.scalars().first():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already exists",
-            )
 
-        exists_email = await session.execute(
-            select(User).where(User.email == user.email)
-        )
-        if exists_email.scalars().first():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
-            )
+    hashed_pw = hash_password(password)
+    otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
 
-        hashed_password = bcrypt.hashpw(
-            user.password.encode(), bcrypt.gensalt()
-        ).decode()
-        otp_secret = pyotp.random_base32()
+    # 儲存使用者資料（含 OTP secret）
+    users_db[username] = {
+        "email": email,
+        "password_hash": hashed_pw,
+        "otp_secret": otp_secret,
+    }
 
-        new_user = User(
-            username=user.username,
-            email=user.email,
-            password_hash=hashed_password,
-            otp_secret=otp_secret,
-            is_active=True,
-        )
-        session.add(new_user)
-        await session.commit()
-
-        totp_uri = pyotp.totp.TOTP(otp_secret).provisioning_uri(
-            name=user.username, issuer_name="StarCSE"
-        )
-        qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?data={totp_uri}"
-
-        return {"message": "User registered successfully", "qrCodeUrl": qr_code_url}
+    return {"message": "User registered successfully", "qrCodeUrl": qr_code_url}
 
 
 @app.post("/api/login")
-async def login(user: UserLogin):
-    async with async_session() as session:
-        result = await session.execute(
-            select(User).where(User.username == user.username)
+async def login(data: dict):
+    username = data.get("username")
+    password = data.get("password")
+    otp_code = data.get("otp")
+
+    if not username or not password or not otp_code:
+        return JSONResponse(status_code=400, content={"message": "Missing fields"})
+
+    user = users_db.get(username)
+    if not user:
+        return JSONResponse(
+            status_code=401, content={"message": "Invalid username or password"}
         )
-        db_user = result.scalars().first()
-        if not db_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Incorrect username or password",
-            )
 
-        if not bcrypt.checkpw(user.password.encode(), db_user.password_hash.encode()):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Incorrect username or password",
-            )
+    hashed_pw = hash_password(password)
+    if hashed_pw != user["password_hash"]:
+        return JSONResponse(
+            status_code=401, content={"message": "Invalid username or password"}
+        )
 
-        totp = pyotp.TOTP(db_user.otp_secret)
-        if not totp.verify(user.otp):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP code"
-            )
+    totp = pyotp.TOTP(user["otp_secret"])
+    if not totp.verify(otp_code):
+        return JSONResponse(status_code=401, content={"message": "Invalid OTP code"})
 
-        return {"message": "Login successful"}
+    # 登入成功
+    return {"message": "Login successful"}
 
 
-# --- 加密 API ---
 @app.post("/api/encrypt")
-async def encrypt_files(files: list[UploadFile] = File(...)):
-    key = AESGCM.generate_key(bit_length=128)
-    aesgcm = AESGCM(key)
+async def encrypt_files(files: List[UploadFile] = File(...)):
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
 
-    encrypted_results = []
-    nonce = os.urandom(12)
-
+    saved_files = []
     for file in files:
-        data = await file.read()
-        encrypted = aesgcm.encrypt(nonce, data, None)
-        encrypted_b64 = base64.b64encode(encrypted).decode()
-        encrypted_results.append(
-            {"filename": file.filename + ".enc", "content": encrypted_b64}
-        )
+        file_location = os.path.join(ENCRYPT_FOLDER, file.filename)
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        saved_files.append(file.filename)
 
-    key_b64 = base64.b64encode(key).decode()
-    nonce_b64 = base64.b64encode(nonce).decode()
-
-    return {
-        "key": key_b64,
-        "nonce": nonce_b64,
-        "files": encrypted_results,
-        "message": "Files encrypted successfully",
-    }
+    return {"message": "Encrypted files saved successfully", "files": saved_files}
 
 
-# --- 解密 API ---
 @app.post("/api/decrypt")
-async def decrypt_files(
-    key: str = Form(...), nonce: str = Form(...), files: list[UploadFile] = File(...)
-):
-    key_bytes = base64.b64decode(key)
-    nonce_bytes = base64.b64decode(nonce)
-    aesgcm = AESGCM(key_bytes)
+async def decrypt_files(files: List[UploadFile] = File(...)):
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
 
-    decrypted_results = []
-
+    saved_files = []
     for file in files:
-        encrypted_data_b64 = await file.read()
-        encrypted_data = base64.b64decode(encrypted_data_b64)
-        try:
-            decrypted = aesgcm.decrypt(nonce_bytes, encrypted_data, None)
-        except Exception:
-            raise HTTPException(
-                status_code=400, detail=f"Failed to decrypt file {file.filename}"
-            )
+        file_location = os.path.join(DECRYPT_FOLDER, file.filename)
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        saved_files.append(file.filename)
 
-        decrypted_results.append(
-            {
-                "filename": file.filename.replace(".enc", ".dec"),
-                "content": base64.b64encode(decrypted).decode(),
-            }
-        )
-
-    return {"files": decrypted_results, "message": "Files decrypted successfully"}
+    return {"message": "Decrypted files saved successfully", "files": saved_files}
