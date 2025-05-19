@@ -103,6 +103,9 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     username = data.get("username")
     password = data.get("password")
 
+    if not email or not username or not password:
+        return JSONResponse(status_code=400, content={"message": "Missing fields"})
+
     # 檢查是否已有帳號
     result = await db.execute(User.__table__.select().where(User.username == username))
     user = result.scalar()
@@ -126,18 +129,20 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
 
 @app.post("/api/login")
 async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        User.__table__.select().where(User.username == data.username)
-    )
+    username = data.get("username")
+    password = data.get("password")
+    otp = data.get("otp")
+
+    result = await db.execute(User.__table__.select().where(User.username == username))
     user = result.scalar()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    if hash_password(data.password) != user.password_hash:
+    if hash_password(password) != user.password_hash:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     totp = pyotp.TOTP(user.otp_secret)
-    if not totp.verify(data.otp):
+    if not totp.verify(otp):
         raise HTTPException(status_code=401, detail="Invalid OTP code")
 
     return {"message": "Login successful"}
