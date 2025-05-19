@@ -73,8 +73,16 @@ async def startup():
 
 
 @app.post("/api/register")
-async def register(user: UserRegister, request: Request):
-    print(await request.json())
+async def register(request: Request):
+    data = await request.json()  # 先讀資料
+    print("📥 Received JSON:", data)  # Log 印出
+
+    try:
+        user = UserRegister(**data)  # 手動交給 Pydantic 驗證
+    except ValidationError as e:
+        print("❌ Validation Error:", e.errors())
+        raise HTTPException(status_code=422, detail=e.errors())
+
     async with async_session() as session:
         exists_username = await session.execute(
             select(User).where(User.username == user.username)
