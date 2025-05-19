@@ -6,7 +6,6 @@ BASE_UPLOAD_FOLDER = "uploads"
 ENCRYPT_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, "encrypt")
 DECRYPT_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, "decrypt")
 
-# 確保資料夾存在
 os.makedirs(ENCRYPT_FOLDER, exist_ok=True)
 os.makedirs(DECRYPT_FOLDER, exist_ok=True)
 
@@ -56,4 +55,4 @@ def handle_file_action(action):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
