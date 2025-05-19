@@ -7,3 +7,4 @@ pyotp
 python-multipart
 cryptography
 python-dotenv
+jinja2
