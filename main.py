@@ -1,11 +1,20 @@
-from flask import Flask
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
-app = Flask(__name__)
+app = FastAPI()
+
+# 讓 /static 路徑可以存取靜態資源
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# 設定 templates 資料夾
+templates = Jinja2Templates(directory="templates")
 
 
-@app.route("/")
-def index():
-    return "Hello, StarCSE is running!"
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 # from flask import Flask, request, jsonify, send_from_directory

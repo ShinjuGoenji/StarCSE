@@ -1,4 +1,3 @@
-Flask
-Flask-CORS
-pyotp
-gunicorn
+fastapi
+uvicorn[standard]
+jinja2

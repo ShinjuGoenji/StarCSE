@@ -1,6 +1,7 @@
 services:
   - type: web
-    name: oasis-star-api
+    name: oasis-star
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: ""
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    plan: free
