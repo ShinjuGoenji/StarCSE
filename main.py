@@ -1,9 +1,12 @@
 from pydantic import BaseModel, EmailStr
-from fastapi import FastAPI, Request, UploadFile, File, HTTPException
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base, Mapped, mapped_column
+from sqlalchemy import String, Integer, Boolean, select
 import os
 import shutil
 import hashlib
@@ -18,11 +21,27 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = FastAPI()
 
-# 靜態資源、模板
+# DB Setup
+Base = declarative_base()
+engine = create_async_engine(DATABASE_URL, echo=True)
+SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String)
+    otp_secret: Mapped[str] = mapped_column(String)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+# Static, templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# 檔案資料夾
+# Upload dirs
 BASE_UPLOAD_FOLDER = "uploads"
 ENCRYPT_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, "encrypt")
 DECRYPT_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, "decrypt")
@@ -30,11 +49,7 @@ os.makedirs(ENCRYPT_FOLDER, exist_ok=True)
 os.makedirs(DECRYPT_FOLDER, exist_ok=True)
 
 
-# 模擬用「資料庫」：字典形式存帳號資訊（實務要用真DB）
-users_db = {}
-
-
-# Pydantic schemas
+# Pydantic models
 class UserRegister(BaseModel):
     username: str
     email: EmailStr
@@ -47,17 +62,21 @@ class UserLogin(BaseModel):
     otp: str
 
 
-# 工具：密碼雜湊（SHA256）
+# Dependency
+async def get_db():
+    async with SessionLocal() as session:
+        yield session
+
+
+# Hashing
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-# 工具：產生 Google Authenticator 秘鑰和 QR Code URL
+# OTP utils
 def generate_otp_secret_and_qr(username: str):
     secret = pyotp.random_base32()
-    # 產生 provisioning URI
     uri = pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name="StarCSE")
-    # 產生 QR code 圖片
     qr = qrcode.make(uri)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
@@ -66,64 +85,54 @@ def generate_otp_secret_and_qr(username: str):
     return secret, qr_data_url
 
 
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/api/register")
-async def register(data: dict):
-    email = data.get("email")
-    username = data.get("username")
-    password = data.get("password")
-
-    if not email or not username or not password:
-        return JSONResponse(status_code=400, content={"message": "Missing fields"})
-
-    if username in users_db:
+async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.username == data.username))
+    if result.scalar():
         return JSONResponse(
             status_code=400, content={"message": "Username already exists"}
         )
 
-    hashed_pw = hash_password(password)
-    otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
+    hashed_pw = hash_password(data.password)
+    otp_secret, qr_code_url = generate_otp_secret_and_qr(data.username)
 
-    # 儲存使用者資料（含 OTP secret）
-    users_db[username] = {
-        "email": email,
-        "password_hash": hashed_pw,
-        "otp_secret": otp_secret,
-    }
+    user = User(
+        username=data.username,
+        email=data.email,
+        password_hash=hashed_pw,
+        otp_secret=otp_secret,
+    )
+    db.add(user)
+    await db.commit()
 
     return {"message": "User registered successfully", "qrCodeUrl": qr_code_url}
 
 
 @app.post("/api/login")
-async def login(data: dict):
-    username = data.get("username")
-    password = data.get("password")
-    otp_code = data.get("otp")
+async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.username == data.username))
+    user = result.scalar()
 
-    if not username or not password or not otp_code:
-        return JSONResponse(status_code=400, content={"message": "Missing fields"})
-
-    user = users_db.get(username)
-    if not user:
+    if not user or hash_password(data.password) != user.password_hash:
         return JSONResponse(
             status_code=401, content={"message": "Invalid username or password"}
         )
 
-    hashed_pw = hash_password(password)
-    if hashed_pw != user["password_hash"]:
-        return JSONResponse(
-            status_code=401, content={"message": "Invalid username or password"}
-        )
-
-    totp = pyotp.TOTP(user["otp_secret"])
-    if not totp.verify(otp_code):
+    totp = pyotp.TOTP(user.otp_secret)
+    if not totp.verify(data.otp):
         return JSONResponse(status_code=401, content={"message": "Invalid OTP code"})
 
-    # 登入成功
     return {"message": "Login successful"}
 
 

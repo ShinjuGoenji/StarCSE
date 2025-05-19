@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
-databases[asyncpg]
-sqlalchemy
+sqlalchemy>=2.0
+asyncpg
 bcrypt
 pyotp
 python-multipart
