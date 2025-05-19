@@ -8,3 +8,4 @@ python-multipart
 cryptography
 python-dotenv
 jinja2
+pydantic[email]
