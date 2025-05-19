@@ -1,13 +1,11 @@
 from flask import Flask
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
 
 
-@app.route("/api/hello")
-def hello():
-    return {"message": "Hello from Render!"}
+@app.route("/")
+def index():
+    return "Hello, StarCSE is running!"
 
 
 # from flask import Flask, request, jsonify, send_from_directory
