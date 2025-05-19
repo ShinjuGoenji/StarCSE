@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, UploadFile, File, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -133,8 +133,8 @@ async def login(data: dict, db: AsyncSession = Depends(get_db)):
     password = data.get("password")
     otp = data.get("otp")
 
-    result = await db.execute(User.__table__.select().where(User.username == username))
-    user = result.scalar()
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
