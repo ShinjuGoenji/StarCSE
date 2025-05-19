@@ -98,21 +98,23 @@ async def read_root(request: Request):
 
 
 @app.post("/api/register")
-async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
+async def register(data: dict, db: AsyncSession = Depends(get_db)):
+    email = data.get("email")
+    username = data.get("username")
+    password = data.get("password")
+
     # 檢查是否已有帳號
-    result = await db.execute(
-        User.__table__.select().where(User.username == data.username)
-    )
+    result = await db.execute(User.__table__.select().where(User.username == username))
     user = result.scalar()
     if user:
         raise HTTPException(status_code=400, detail="Username already exists")
 
     # 建立帳號
-    hashed_pw = hash_password(data.password)
-    otp_secret, qr_code_url = generate_otp_secret_and_qr(data.username)
+    hashed_pw = hash_password(password)
+    otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
     new_user = User(
-        username=data.username,
-        email=data.email,
+        username=username,
+        email=email,
         password_hash=hashed_pw,
         otp_secret=otp_secret,
     )
