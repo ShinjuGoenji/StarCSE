@@ -73,7 +73,8 @@ async def startup():
 
 
 @app.post("/api/register")
-async def register(user: UserRegister):
+async def register(user: UserRegister, request: Request):
+    print(await request.json())
     async with async_session() as session:
         exists_username = await session.execute(
             select(User).where(User.username == user.username)
