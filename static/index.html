@@ -1,35 +1,147 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 
 <head>
     <meta charset="UTF-8">
-    <title>Upload Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oasis Star</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
-    <h2>Upload test.txt</h2>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="file" id="fileInput" accept=".txt" />
-        <button type="submit">Upload</button>
-    </form>
+    <header>
+        <h1>Oasis Star</h1>
+        <div class="auth-buttons" id="authButtons" style="display: flex;">
+            <button onclick="showSection('login')">Login</button>
+            <button onclick="showSection('register')">Register</button>
+        </div>
+        <div class="auth-buttons" id="userInfo" style="display: none;">
+            <span class="welcome-message" id="welcomeMessage"></span>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </header>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a onclick="showSection('home')">Home</a></li>
+                <li><a onclick="showSection('encrypt')">Encrypt</a></li>
+                <li><a onclick="showSection('decrypt')">Decrypt</a></li>
+                <li><a onclick="showSection('about')">About</a></li>
+            </ul>
+        </nav>
+        <main id="mainContent">
+            <div id="home" class="content-section active">
+                <div class="text-left-top">
+                    <h2>Welcome to Oasis Star</h2>
+                    <p>密碼工程期末專題</p>
+                    <p>Please select a function from the sidebar on the left.</p>
+                </div>
+            </div>
+            <div id="encrypt" class="content-section">
+                <div class="text-left-top">
+                    <h2>Encrypt Files</h2>
+                </div>
+                <div id="encryptContent" style="display: none;">
+                    <div class="drop-area" id="dropArea">
+                        <p>Drag and drop your files here to encrypt</p>
+                    </div>
+                    <div class="file-list" id="fileList"></div>
+                    <button class="upload-button" id="uploadButton" style="display: none;">Encrypt</button>
+                </div>
+                <div class="login-prompt" id="encryptLoginPrompt" style="display: block;">
+                    請先登入！
+                </div>
+            </div>
+            <div id="decrypt" class="content-section">
+                <div class="text-left-top">
+                    <h2>Decrypt Files</h2>
+                </div>
+                <div id="decryptContent" style="display: none;">
+                    <div class="drop-area" id="decryptDropArea">
+                        <p>Drag and drop your encrypted files and certificate here to decrypt</p>
+                    </div>
+                    <div class="file-list" id="decryptFileList"></div>
+                    <button class="upload-button" id="decryptButton" style="display: none;">Decrypt</button>
+                </div>
+                <div class="login-prompt" id="decryptLoginPrompt" style="display: block;">
+                    請先登入！
+                </div>
+            </div>
+            <div id="about" class="content-section">
+                <div class="text-left-top">
+                    <h2>About Us</h2>
+                    <p>作者：許于軒 郭朝恩 鄭人傑</p>
+                    <p>這是一個可以讓使用者線上加解密檔案的網站，</p>
+                    <p>使用者加密完檔案之後會產生certificate，</p>
+                    <p>接收到檔案的收件者可以拿檔案和certificate來網站上解密，</p>
+                    <p>得到原始的檔案。</p>
+                </div>
+            </div>
+            <div id="login" class="content-section">
+                <div class="form-container">
+                    <h2>Login</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="login-username">Username:</label>
+                            <input type="text" id="login-username" name="login-username" required="">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password:</label>
+                            <input type="password" id="login-password" name="login-password" required="">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-otp">Two-Factor Code:</label>
+                            <input type="text" id="login-otp" name="login-otp" required="">
+                        </div>
+                        <button type="submit">Login</button>
+                        <div id="login-error" class="error"></div>
+                    </form>
+                    <div class="register-link">
+                        Don't have an account? <a onclick="showSection('register')">Register</a>
+                    </div>
+                </div>
+            </div>
+            <div id="register" class="content-section">
+                <div class="form-container">
+                    <h2>Register</h2>
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="register-email">Email:</label>
+                            <input type="email" id="register-email" name="register-email" required="">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-username">Username:</label>
+                            <input type="text" id="register-username" name="register-username" required="">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">Password:</label>
+                            <input type="password" id="register-password" name="register-password" required="">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-confirm-password">Confirm Password:</label>
+                            <input type="password" id="register-confirm-password" name="register-confirm-password"
+                                required="">
+                            <div id="register-password-error" class="error"></div>
+                        </div>
+                        <button type="submit" id="register-submit" disabled="">Submit</button>
+                        <div id="register-error" class="error"></div>
+                        <div id="qr-code" class="qr-code" style="display: none;">
+                            <p>Scan this QR Code with Google Authenticator:</p>
+                            <img id="qr-code-img" src="" alt="QR Code">
+                        </div>
+                        <div class="login-link">
+                            Already have an account? <a onclick="showSection('login')">Login</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    <pre id="response"></pre>
+    <p id="responseText"></p>
 
-    <script>
-        document.getElementById("uploadForm").onsubmit = async function (e) {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append("file", document.getElementById("fileInput").files[0]);
-
-            const res = await fetch("/upload", {
-                method: "POST",
-                body: formData
-            });
-
-            const data = await res.json();
-            document.getElementById("response").textContent = JSON.stringify(data, null, 2);
-        }
-    </script>
+    <script src="/static/script.js"></script>
 </body>
 
 </html>
