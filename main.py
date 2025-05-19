@@ -128,7 +128,7 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/api/login")
-async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(data: dict, db: AsyncSession = Depends(get_db)):
     username = data.get("username")
     password = data.get("password")
     otp = data.get("otp")
