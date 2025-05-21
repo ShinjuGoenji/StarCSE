@@ -46,7 +46,7 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     hashed_pw = hash_password(password)
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
 
-    user_sk = await create_user_symmetric_key_cli(tag=f"user-key-{username}")
+    user_sk = create_user_symmetric_key_cli(tag=f"user-key-{username}")
     new_user = User(
         username=username,
         email=email,
