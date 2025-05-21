@@ -9,7 +9,6 @@ from io import BytesIO
 import hashlib
 
 from models import User, get_db
-from kms import create_user_symmetric_key  # ⬅ 引入 KMS 函式
 
 router = APIRouter()
 
@@ -45,18 +44,11 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
 
     hashed_pw = hash_password(password)
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
-
-    # # 建立 KMS 金鑰
-    # try:
-    #     kms_key_id = create_user_symmetric_key()
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=f"KMS error: {str(e)}")
     new_user = User(
         username=username,
         email=email,
         password_hash=hashed_pw,
         otp_secret=otp_secret,
-        kms_key_id="test",  # 假設你的 User model 有此欄位
     )
     db.add(new_user)
     await db.commit()
