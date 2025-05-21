@@ -9,14 +9,17 @@ from io import BytesIO
 import hashlib
 
 from models import User, get_db
+from kms import create_user_symmetric_key  # ⬅ 引入 KMS 函式
 
 router = APIRouter()
 
 
+# 密碼雜湊
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
+# 產生 OTP 密鑰 + QR Code
 def generate_otp_secret_and_qr(username: str):
     secret = pyotp.random_base32()
     uri = pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name="StarCSE")
@@ -28,6 +31,7 @@ def generate_otp_secret_and_qr(username: str):
     return secret, qr_data_url
 
 
+# 註冊
 @router.post("/api/register")
 async def register(data: dict, db: AsyncSession = Depends(get_db)):
     email = data.get("email")
@@ -44,18 +48,31 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
 
     hashed_pw = hash_password(password)
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
+
+    # 建立 KMS 金鑰
+    try:
+        kms_key_id = create_user_symmetric_key()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"KMS error: {str(e)}")
+
     new_user = User(
         username=username,
         email=email,
         password_hash=hashed_pw,
         otp_secret=otp_secret,
+        kms_key_id=kms_key_id,  # 假設你的 User model 有此欄位
     )
     db.add(new_user)
     await db.commit()
 
-    return {"message": "User registered successfully", "qrCodeUrl": qr_code_url}
+    return {
+        "message": "User registered successfully",
+        "qrCodeUrl": qr_code_url,
+        "kms_key_id": kms_key_id,
+    }
 
 
+# 登入
 @router.post("/api/login")
 async def login(data: dict, db: AsyncSession = Depends(get_db)):
     username = data.get("username")
