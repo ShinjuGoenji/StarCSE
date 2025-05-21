@@ -1,16 +1,23 @@
-from cosmian_kms import KMS
-import uuid
+from cosmian_kms import KmsClient
+import asyncio
 
-# Ngrok 公開的 KMS URL
 KMS_URL = "https://9921-140-113-225-145.ngrok-free.app"
+KMS_API_KEY = None
+INSECURE_MODE = True
 
 
-# 建立 KMS 対稱金鑰，並回傳金鑰 ID
-def create_user_symmetric_key() -> str:
-    try:
-        key_tag = f"user-sk-{uuid.uuid4()}"
-        kms = KMS(url=KMS_URL, verify_tls=False)  # 忽略 Ngrok 測試憑證
-        key_id = kms.create_symmetric_key(tag=key_tag)
-        return key_id
-    except Exception as e:
-        raise RuntimeError(f"Failed to create KMS key: {str(e)}")
+async def create_user_symmetric_key(tag: str = "user-key") -> str:
+    client = KmsClient(
+        server_url=KMS_URL, api_key=KMS_API_KEY, insecure_mode=INSECURE_MODE
+    )
+
+    # create_symmetric_key 會回傳 Future[str]
+    key_id = await client.create_symmetric_key(
+        key_len_in_bits=256, algorithm="AES", tags=[tag]
+    )
+    return key_id
+
+
+# 測試同步包裝
+def create_user_symmetric_key_sync(tag: str = "user-key") -> str:
+    return asyncio.run(create_user_symmetric_key(tag))
