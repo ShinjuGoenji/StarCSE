@@ -10,14 +10,11 @@ async def create_user_symmetric_key(tag: str = "user-key") -> str:
     client = KmsClient(
         server_url=KMS_URL, api_key=KMS_API_KEY, insecure_mode=INSECURE_MODE
     )
-
-    # create_symmetric_key 會回傳 Future[str]
     key_id = await client.create_symmetric_key(
         key_len_in_bits=256, algorithm="AES", tags=[tag]
     )
     return key_id
 
 
-# 測試同步包裝
 def create_user_symmetric_key_sync(tag: str = "user-key") -> str:
     return asyncio.run(create_user_symmetric_key(tag))

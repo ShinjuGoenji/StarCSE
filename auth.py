@@ -49,27 +49,20 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     hashed_pw = hash_password(password)
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
 
-    # 建立 KMS 金鑰
-    try:
-        kms_key_id = create_user_symmetric_key()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"KMS error: {str(e)}")
+    # 產生 user secret key (user_sk)，這邊用 asyncio.create_task 或直接 await
+    user_sk = await create_user_symmetric_key(tag=f"user-key-{username}")
 
     new_user = User(
         username=username,
         email=email,
         password_hash=hashed_pw,
         otp_secret=otp_secret,
-        kms_key_id=kms_key_id,  # 假設你的 User model 有此欄位
+        user_sk=user_sk,  # 假設 User 模型有此欄位
     )
     db.add(new_user)
     await db.commit()
 
-    return {
-        "message": "User registered successfully",
-        "qrCodeUrl": qr_code_url,
-        "kms_key_id": kms_key_id,
-    }
+    return {"message": "User registered successfully", "qrCodeUrl": qr_code_url}
 
 
 # 登入
