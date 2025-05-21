@@ -21,6 +21,7 @@ class User(Base):
     email = Column(String(128), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)
     otp_secret = Column(String(32), nullable=False)
+    user_sk = Column(String, nullable=True)
 
 
 async def get_db():
