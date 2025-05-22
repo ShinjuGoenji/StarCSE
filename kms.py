@@ -110,14 +110,13 @@ def create_user_keys(tag: str = "user-key"):
     if not export_file(export_cmd):
         return None
 
-    key_id = key_id + "_pk"
     export_cmd = [
         "rsa",
         "keys",
         "export",
         "--key-id",
-        key_id,
-        f"user_keys/user_pk/{key_id}.json",
+        key_id + "_pk",
+        f"user_keys/user_pk/{key_id + "_pk"}.json",
     ]
 
     if not export_file(export_cmd):
