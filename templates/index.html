@@ -45,32 +45,14 @@
               <p>Drag and drop your files here to encrypt</p>
             </div>
             <div class="file-list" id="fileList"></div>
-            <!-- 搜尋欄 -->
-            <input
-              type="text"
-              id="userSearchInput"
-              placeholder="搜尋使用者..."
-              autocomplete="off"
-              style="width: 300px; margin-top: 10px"
-            />
-
-            <!-- 下拉提示清單 -->
-            <ul
-              id="userSuggestions"
-              style="
-                border: 1px solid #ccc;
-                max-height: 150px;
-                overflow-y: auto;
-                width: 300px;
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                position: absolute;
-                background: white;
-                display: none;
-                z-index: 1000;
-              "
-            ></ul>
+            <div class="search-user">
+              <input
+                type="text"
+                placeholder="搜尋使用者..."
+                id="userSearchInput"
+              />
+              <button type="button" onclick="handleUserSearch()">搜尋</button>
+            </div>
             <button
               class="upload-button"
               id="uploadButton"

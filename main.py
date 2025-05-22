@@ -102,8 +102,8 @@ async def get_user_keys(username: str, db: AsyncSession):
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=400, detail="Username not found")
-    user_key_id = user.user_key_id
-    user_pk, user_sk = extract_user_keys(user_key_id)
+    user_pk = bytes.fromhex(user.user_pk)
+    user_sk = bytes.fromhex(user.user_sk)
 
     return user_pk, user_sk
 
