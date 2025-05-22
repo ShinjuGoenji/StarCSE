@@ -114,54 +114,6 @@ function handleFiles(files, fileListElement, buttonElement, section) {
     decryptFilesToUpload = filesArray;
   }
 }
-// function createDownloadLink(base64Data, filename) {
-//   const blob = base64ToBlob(base64Data, "application/octet-stream");
-//   const link = document.createElement("a");
-//   link.href = URL.createObjectURL(blob);
-//   link.download = filename;
-//   link.textContent = `Download ${filename}`;
-//   return link;
-// }
-
-// function base64ToBlob(base64, mime) {
-//   const binary = atob(base64);
-//   const bytes = new Uint8Array(binary.length);
-//   for (let i = 0; i < binary.length; i++) {
-//     bytes[i] = binary.charCodeAt(i);
-//   }
-//   return new Blob([bytes], { type: mime });
-// }
-
-// function showEncryptedResults(encryptedFiles, signatures, AES_key_enc) {
-//   const resultsArea = document.getElementById("encryptResults");
-//   resultsArea.innerHTML = "<h3>Download Encrypted Files</h3>";
-
-//   // 建立每個加密檔案的下載連結
-//   encryptedFiles.forEach((file) => {
-//     const link = createDownloadLink(file.content, file.filename);
-//     resultsArea.appendChild(link);
-//     resultsArea.appendChild(document.createElement("br"));
-//   });
-
-//   // 簽章 JSON 檔下載
-//   const signatureBlob = new Blob([JSON.stringify(signatures, null, 2)], {
-//     type: "application/json",
-//   });
-//   const signatureLink = document.createElement("a");
-//   signatureLink.href = URL.createObjectURL(signatureBlob);
-//   signatureLink.download = "signatures.json";
-//   signatureLink.textContent = "Download Signatures (signatures.json)";
-//   resultsArea.appendChild(signatureLink);
-//   resultsArea.appendChild(document.createElement("br"));
-
-//   // AES 金鑰下載
-//   const aesBlob = base64ToBlob(AES_key_enc, "application/octet-stream");
-//   const aesLink = document.createElement("a");
-//   aesLink.href = URL.createObjectURL(aesBlob);
-//   aesLink.download = "aes_key.enc";
-//   aesLink.textContent = "Download AES Key (aes_key.enc)";
-//   resultsArea.appendChild(aesLink);
-// }
 
 uploadButton.addEventListener("click", () => {
   if (!isLoggedIn) {
@@ -373,6 +325,47 @@ registerForm.addEventListener("submit", async function (event) {
     console.error("Error:", error);
   }
 });
+
+let selectedUsers = [];
+
+function searchUsers(query) {
+  if (!query.trim()) {
+    document.getElementById("searchResults").innerHTML = "";
+    return;
+  }
+
+  fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+    .then((res) => res.json())
+    .then((users) => {
+      const resultsDiv = document.getElementById("searchResults");
+      resultsDiv.innerHTML = "";
+
+      users.forEach((user) => {
+        if (!selectedUsers.includes(user.username)) {
+          const div = document.createElement("div");
+          div.textContent = user.username;
+          div.onclick = () => selectUser(user.username);
+          resultsDiv.appendChild(div);
+        }
+      });
+    });
+}
+
+function selectUser(username) {
+  selectedUsers.push(username);
+  updateSelectedRecipients();
+  document.getElementById("searchResults").innerHTML = "";
+}
+
+function updateSelectedRecipients() {
+  const container = document.getElementById("selectedRecipients");
+  container.innerHTML = "";
+  selectedUsers.forEach((username) => {
+    const span = document.createElement("span");
+    span.textContent = username;
+    container.appendChild(span);
+  });
+}
 
 // 初始化頁面
 initializePage();

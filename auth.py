@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -79,3 +79,10 @@ async def login(data: dict, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid OTP code")
 
     return {"message": "Login successful"}
+
+
+@router.get("/api/users/search")
+async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.username.ilike(f"%{q}%")))
+    users = result.scalars().all()
+    return [{"username": user.username} for user in users]

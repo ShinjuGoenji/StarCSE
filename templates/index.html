@@ -45,6 +45,18 @@
               <p>Drag and drop your files here to encrypt</p>
             </div>
             <div class="file-list" id="fileList"></div>
+            <div class="form-group">
+              <label for="recipientSearch">選擇收件者：</label>
+              <input
+                type="text"
+                id="recipientSearch"
+                placeholder="搜尋使用者..."
+                oninput="searchUsers(this.value)"
+              />
+              <div id="searchResults" class="search-results"></div>
+              <div id="selectedRecipients" class="selected-recipients"></div>
+            </div>
+
             <button
               class="upload-button"
               id="uploadButton"
