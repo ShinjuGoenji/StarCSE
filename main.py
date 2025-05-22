@@ -21,7 +21,7 @@ from models import User, get_db
 #################################################
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_der_private_key
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -221,7 +221,7 @@ async def encrypt_files(
                     sub_zip.writestr(file["filename"], file["content"])
 
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
-                sub_zip.writestr(f"aes_key-{recipient}.enc", enc_AES_key)
+                sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
                 sub_zip.writestr("verify.key", user_pk_pem)
 
             sub_zip_buffer.seek(0)
@@ -263,7 +263,7 @@ async def decrypt_files(
 
         # 讀 verify.key (PEM 格式公鑰)
         if "verify.key" not in namelist:
-            raise HTTPException(status_code=400, detail="verify.key not found in zip")
+            raise HTTPException(status_code=400, detail="verify.key遺失")
 
         verify_key_pem = zip_file.read("verify.key")
         try:
@@ -274,10 +274,10 @@ async def decrypt_files(
             raise HTTPException(status_code=400, detail=f"Load verify.key failed: {e}")
 
         # 找出 aes_key 檔
-        aes_key_name = f"aes_key-{username}.enc"
+        aes_key_name = f"{username}.key.enc"
         if aes_key_name not in namelist:
             raise HTTPException(
-                status_code=400, detail="Encrypted AES key not found in zip"
+                status_code=400, detail=f"{username}.key.enc 加密過屬於您的解密鑰遺失"
             )
 
         aes_key_enc = zip_file.read(aes_key_name)
@@ -295,14 +295,12 @@ async def decrypt_files(
         except Exception as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或檔案遭篡改",
+                detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
             )
 
         # 讀簽章 JSON
         if "signatures.json" not in namelist:
-            raise HTTPException(
-                status_code=400, detail="signatures.json not found in zip"
-            )
+            raise HTTPException(status_code=400, detail="簽名 signatures.json 遺失")
 
         signatures_json = zip_file.read("signatures.json")
         signatures = json.loads(signatures_json)
@@ -314,7 +312,7 @@ async def decrypt_files(
 
             if enc_filename not in namelist:
                 raise HTTPException(
-                    status_code=400, detail=f"Encrypted file {enc_filename} missing"
+                    status_code=400, detail=f"加密檔 {enc_filename} 遺失"
                 )
 
             enc_content = zip_file.read(enc_filename)
@@ -334,7 +332,7 @@ async def decrypt_files(
             except Exception:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Signature verification failed for {enc_filename}",
+                    detail=f"Signature verification失敗， {enc_filename} 可能遭到竄改",
                 )
 
             # AES-GCM 解密 (nonce 為前 12 bytes)

@@ -115,6 +115,9 @@ function handleFiles(files, fileListElement, buttonElement, section) {
   }
 }
 
+const encryptLoading = document.getElementById("encryptLoading");
+const decryptLoading = document.getElementById("decryptLoading");
+
 uploadButton.addEventListener("click", () => {
   if (!isLoggedIn) {
     alert("請先登入！");
@@ -202,7 +205,7 @@ decryptButton.addEventListener("click", () => {
       .then(async (response) => {
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.detail || "Decryption failed");
+          throw new Error(errorData.detail);
         }
         return response.blob();
       })
@@ -224,6 +227,7 @@ decryptButton.addEventListener("click", () => {
       });
   }
 });
+
 // Login Form Logic
 document
   .getElementById("loginForm")
