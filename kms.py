@@ -4,7 +4,7 @@ import subprocess
 import json
 
 CMD = [
-    "./test",
+    "./cosmian",
     "--kms-url",
     "https://9921-140-113-225-145.ngrok-free.app",
     "--kms-accept-invalid-certs",
