@@ -82,17 +82,17 @@ async def login(data: dict, db: AsyncSession = Depends(get_db)):
     return {"message": "Login successful"}
 
 
-@router.get("/api/users/search")
-async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.username.ilike(f"%{q}%")))
-    users = result.scalars().all()
-    return [{"username": user.username} for user in users]
-
-
-# @router.get("/api/users/search")
+# @router.get("/api/users")
 # async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
-#     # 搜尋 username 包含 q 字串，忽略大小寫
 #     result = await db.execute(select(User).where(User.username.ilike(f"%{q}%")))
 #     users = result.scalars().all()
-#     # 只回傳 username 字串列表，方便前端處理
-#     return [user.username for user in users]
+#     return [{"username": user.username} for user in users]
+
+
+@router.get("/api/users")
+async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
+    # 搜尋 username 包含 q 字串，忽略大小寫
+    result = await db.execute(select(User).where(User.username.ilike(f"%{q}%")))
+    users = result.scalars().all()
+    # 只回傳 username 字串列表，方便前端處理
+    return [user.username for user in users]
