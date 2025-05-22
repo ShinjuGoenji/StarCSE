@@ -123,7 +123,7 @@ def create_user_keys(tag: str = "user-key"):
     if not export_file(export_cmd):
         return None
 
-    user_pk, user_sk = extract_user_keys(user_sk)
+    user_pk, user_sk = extract_user_keys(key_id)
 
     return user_pk, user_sk
 
