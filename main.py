@@ -97,10 +97,7 @@ def extract_user_keys(user_key_id: str) -> bytes:
     return user_pk, user_sk
 
 
-async def get_user_keys(
-    username: str,
-    db: AsyncSession = Depends(get_db),
-):
+async def get_user_keys(username: str, db: AsyncSession):
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
     if not user:
@@ -179,6 +176,7 @@ def encrypt_AES_key(AES_key: bytes, user_pk: bytes) -> bytes:
 async def encrypt_files(
     username: str = Form(...),
     files: List[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded")
@@ -192,7 +190,7 @@ async def encrypt_files(
     )
 
     # 3. get user public and private keys
-    user_pk, user_sk = await get_user_keys(username=username)
+    user_pk, user_sk = await get_user_keys(username=username, db=db)
 
     # 4. sign each encrypted file
     signatures: List[bytes] = sign_encrypted_files(
