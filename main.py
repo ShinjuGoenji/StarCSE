@@ -25,7 +25,6 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.serialization import load_der_private_key
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 #################################################
 
@@ -229,13 +228,111 @@ async def encrypt_files(
 
 
 @app.post("/api/decrypt")
-async def decrypt_files(files: List[UploadFile] = File(...)):
-    if not files:
-        raise HTTPException(status_code=400, detail="No files uploaded")
-    saved_files = []
-    for file in files:
-        file_location = os.path.join(DECRYPT_FOLDER, file.filename)
-        with open(file_location, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        saved_files.append(file.filename)
-    return {"message": "Decrypted files saved successfully", "files": saved_files}
+async def decrypt_files(
+    username: str = Form(...),
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
+    # 1. 從 DB 取該使用者的公私鑰
+    user_pk_bytes, user_sk_bytes = await get_user_keys(username, db)
+    private_key = load_der_private_key(user_sk_bytes, password=None)
+    public_key = serialization.load_der_public_key(
+        user_pk_bytes, backend=default_backend()
+    )
+
+    # 2. 讀取上傳的 zip 檔
+    file_bytes = await file.read()
+    zip_buffer = BytesIO(file_bytes)
+
+    decrypted_files = []
+    signatures = None
+    aes_key_enc = None
+
+    with zipfile.ZipFile(zip_buffer, "r") as zip_file:
+        # 讀所有檔名
+        namelist = zip_file.namelist()
+
+        # 找出 aes_key 檔 (必須是 aes_key-<username>.enc)
+        aes_key_name = f"aes_key-{username}.enc"
+        if aes_key_name not in namelist:
+            raise HTTPException(
+                status_code=400, detail="Encrypted AES key not found in zip"
+            )
+
+        aes_key_enc = zip_file.read(aes_key_name)
+        # 解密 AES key
+        AES_key = private_key.decrypt(
+            aes_key_enc,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None,
+            ),
+        )
+
+        # 讀簽章 JSON
+        if "signatures.json" not in namelist:
+            raise HTTPException(
+                status_code=400, detail="signatures.json not found in zip"
+            )
+
+        signatures_json = zip_file.read("signatures.json")
+        signatures = json.loads(signatures_json)
+
+        # 依序解密各個加密檔案並驗證簽章
+        for file_info in signatures:
+            enc_filename = file_info["filename"]
+            signature_b64 = file_info["signature"]
+            if enc_filename not in namelist:
+                raise HTTPException(
+                    status_code=400, detail=f"Encrypted file {enc_filename} missing"
+                )
+
+            enc_content = zip_file.read(enc_filename)
+
+            # 驗簽
+            signature = base64.b64decode(signature_b64)
+            try:
+                public_key.verify(
+                    signature,
+                    enc_content,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH,
+                    ),
+                    hashes.SHA256(),
+                )
+            except Exception:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Signature verification failed for {enc_filename}",
+                )
+
+            # AES-GCM 解密 (nonce 12 bytes 前綴)
+            nonce = enc_content[:12]
+            ciphertext = enc_content[12:]
+            aesgcm = AESGCM(AES_key)
+            plaintext = aesgcm.decrypt(nonce, ciphertext, associated_data=None)
+
+            # 移除 .enc 副檔名回復原始檔名
+            orig_filename = (
+                enc_filename[:-4] if enc_filename.endswith(".enc") else enc_filename
+            )
+
+            decrypted_files.append({"filename": orig_filename, "content": plaintext})
+
+    # 這邊回傳一個 zip 包含所有解密檔案
+    output_zip_buffer = BytesIO()
+    with zipfile.ZipFile(output_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
+        for f in decrypted_files:
+            out_zip.writestr(f["filename"], f["content"])
+    output_zip_buffer.seek(0)
+
+    return StreamingResponse(
+        output_zip_buffer,
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename=decrypted_files.zip"},
+    )

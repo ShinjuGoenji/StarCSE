@@ -191,6 +191,7 @@ decryptButton.addEventListener("click", () => {
     decryptFilesToUpload.forEach((file) => {
       formData.append("files", file);
     });
+    formData.append("username", currentUser);
 
     fetch(`${backendUrl}/api/decrypt`, {
       method: "POST",
