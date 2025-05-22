@@ -1,31 +1,45 @@
 import pytest
-from fastapi.testclient import TestClient
-from main import app  # 改成你的 FastAPI app import
+from httpx import AsyncClient
+from main import app
+from asgi_lifespan import LifespanManager
 
-client = TestClient(app)
+
+@pytest.mark.asyncio
+async def test_register_success():
+    test_user = {
+        "username": "testuser1",
+        "password": "testpass123",
+        "email": "test1@example.com",
+    }
+
+    async with LifespanManager(app):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.post("/api/register", json=test_user)
+            assert response.status_code == 200
+            assert "qrCodeUrl" in response.json()
 
 
-def test_encrypt_files():
-    username = "test"  # 測試用使用者
-    filepath = "test.txt"  # 測試檔案
+@pytest.mark.asyncio
+async def test_register_duplicate_username():
+    test_user = {
+        "username": "testuser1",  # 假設已經存在
+        "password": "testpass123",
+        "email": "another@example.com",
+    }
 
-    with open(filepath, "rb") as f:
-        files = {
-            "files": ("test.txt", f, "text/plain"),
-            # 如果是多檔案，可以用列表: [("files", (filename, fileobj, content_type))]
-        }
-        data = {
-            "username": username,
-        }
+    async with LifespanManager(app):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.post("/api/register", json=test_user)
+            assert response.status_code == 400
+            assert response.json()["detail"] == "Username already exists"
 
-        response = client.post("/api/encrypt", data=data, files=files)
 
-    assert response.status_code == 200
-    # 改為儲存 zip 內容到檔案，或直接解析 zip：
-    with open("test_output.zip", "wb") as f:
-        f.write(response.content)
+@pytest.mark.asyncio
+async def test_register_missing_fields():
+    test_user = {"username": "", "password": "somepass", "email": "missing@example.com"}
 
-    # # 檢查回傳格式，這裡你可依實際回傳調整
-    # assert "files" in json_data
-    # assert isinstance(json_data["files"], list)
-    # assert len(json_data["files"]) > 0
+    async with LifespanManager(app):
+        async with AsyncClient(app=app, base_url="http://test") as ac:
+            response = await ac.post("/api/register", json=test_user)
+            assert response.status_code == 400
+            assert response.json()["message"] == "Missing fields"

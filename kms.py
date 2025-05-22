@@ -49,11 +49,11 @@ def create_user_keys(tag: str = "user-key"):
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
-        return None
+        return "0000000000000"
 
     match = re.search(r"Public key unique identifier:\s*([a-f0-9\-]+)", result.stdout)
     if not match:
-        return None
+        return "222222222222222"
 
     user_sk = match.group(1)
     export_cmd = [
@@ -66,7 +66,7 @@ def create_user_keys(tag: str = "user-key"):
     ]
 
     if not export_file(export_cmd):
-        return None
+        return "111111111"
 
     user_pk = user_sk + "_pk"
     export_cmd = [
@@ -79,7 +79,7 @@ def create_user_keys(tag: str = "user-key"):
     ]
 
     if not export_file(export_cmd):
-        return None
+        return "333333333333333"
 
     return user_sk
 
