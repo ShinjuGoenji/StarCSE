@@ -195,20 +195,22 @@ decryptButton.addEventListener("click", () => {
     const formData = new FormData();
     formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
     formData.append("username", currentUser);
-
     fetch(`${backendUrl}/api/decrypt`, {
       method: "POST",
       body: formData,
     })
-      .then((response) => {
-        if (!response.ok) throw new Error("Decryption failed");
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Decryption failed");
+        }
         return response.blob();
       })
       .then((blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "decrypted_file.zip"; // or .txt, etc.
+        link.download = "decrypted_file.zip";
         link.click();
         URL.revokeObjectURL(url);
         alert("File decrypted and downloaded successfully!");
@@ -218,7 +220,7 @@ decryptButton.addEventListener("click", () => {
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Decryption failed. Please try again.");
+        alert("解密失敗：" + error.message);
       });
   }
 });
