@@ -186,11 +186,14 @@ decryptButton.addEventListener("click", () => {
     return;
   }
 
-  if (confirm("Are you sure you want to decrypt these files?")) {
+  if (decryptFilesToUpload.length !== 1) {
+    alert("請上傳一個要解密的檔案。");
+    return;
+  }
+
+  if (confirm("Are you sure you want to decrypt this file?")) {
     const formData = new FormData();
-    decryptFilesToUpload.forEach((file) => {
-      formData.append("files", file);
-    });
+    formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
     formData.append("username", currentUser);
 
     fetch(`${backendUrl}/api/decrypt`, {
@@ -199,7 +202,16 @@ decryptButton.addEventListener("click", () => {
     })
       .then((response) => {
         if (!response.ok) throw new Error("Decryption failed");
-        alert("Files decrypted successfully!");
+        return response.blob();
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "decrypted_file.zip"; // or .txt, etc.
+        link.click();
+        URL.revokeObjectURL(url);
+        alert("File decrypted and downloaded successfully!");
         decryptFileList.innerHTML = "";
         decryptButton.style.display = "none";
         decryptFilesToUpload = [];
@@ -210,7 +222,6 @@ decryptButton.addEventListener("click", () => {
       });
   }
 });
-
 // Login Form Logic
 document
   .getElementById("loginForm")
