@@ -198,6 +198,13 @@ async def encrypt_files(
     signatures: List[dict] = sign_encrypted_files(
         user_sk=user_sk, encrypted_files=encrypted_files
     )
+    user_pk_pem = serialization.load_der_public_key(
+        user_pk, backend=default_backend()
+    ).public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
     # dict 結構: {"filename": ..., "signature": ...}
 
     # 4. 為每位共享者建立一份獨立的 ZIP 包（含專屬的 AES key 加密）
@@ -215,6 +222,7 @@ async def encrypt_files(
 
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"aes_key-{recipient}.enc", enc_AES_key)
+                sub_zip.writestr("verify.key", user_pk_pem)
 
             sub_zip_buffer.seek(0)
             outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
@@ -236,11 +244,10 @@ async def decrypt_files(
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
 
-    # 1. 從 DB 取該使用者的公私鑰
+    # 1. 從 DB 取該使用者的私鑰（用來解密 AES key）
     user_pk_bytes, user_sk_bytes = await get_user_keys(username, db)
-    private_key = load_der_private_key(user_sk_bytes, password=None)
-    public_key = serialization.load_der_public_key(
-        user_pk_bytes, backend=default_backend()
+    private_key = serialization.load_der_private_key(
+        user_sk_bytes, password=None, backend=default_backend()
     )
 
     # 2. 讀取上傳的 zip 檔
@@ -249,13 +256,24 @@ async def decrypt_files(
 
     decrypted_files = []
     signatures = None
-    aes_key_enc = None
+    AES_key = None
 
     with zipfile.ZipFile(zip_buffer, "r") as zip_file:
-        # 讀所有檔名
         namelist = zip_file.namelist()
 
-        # 找出 aes_key 檔 (必須是 aes_key-<username>.enc)
+        # 讀 verify.key (PEM 格式公鑰)
+        if "verify.key" not in namelist:
+            raise HTTPException(status_code=400, detail="verify.key not found in zip")
+
+        verify_key_pem = zip_file.read("verify.key")
+        try:
+            public_key = serialization.load_pem_public_key(
+                verify_key_pem, backend=default_backend()
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Load verify.key failed: {e}")
+
+        # 找出 aes_key 檔
         aes_key_name = f"aes_key-{username}.enc"
         if aes_key_name not in namelist:
             raise HTTPException(
@@ -263,6 +281,7 @@ async def decrypt_files(
             )
 
         aes_key_enc = zip_file.read(aes_key_name)
+
         # 解密 AES key
         try:
             AES_key = private_key.decrypt(
@@ -288,19 +307,20 @@ async def decrypt_files(
         signatures_json = zip_file.read("signatures.json")
         signatures = json.loads(signatures_json)
 
-        # 依序解密各個加密檔案並驗證簽章
+        # 依序驗簽並解密各個加密檔案
         for file_info in signatures:
             enc_filename = file_info["filename"]
             signature_b64 = file_info["signature"]
+
             if enc_filename not in namelist:
                 raise HTTPException(
                     status_code=400, detail=f"Encrypted file {enc_filename} missing"
                 )
 
             enc_content = zip_file.read(enc_filename)
+            signature = base64.b64decode(signature_b64)
 
             # 驗簽
-            signature = base64.b64decode(signature_b64)
             try:
                 public_key.verify(
                     signature,
@@ -317,7 +337,7 @@ async def decrypt_files(
                     detail=f"Signature verification failed for {enc_filename}",
                 )
 
-            # AES-GCM 解密 (nonce 12 bytes 前綴)
+            # AES-GCM 解密 (nonce 為前 12 bytes)
             nonce = enc_content[:12]
             ciphertext = enc_content[12:]
             aesgcm = AESGCM(AES_key)
@@ -330,7 +350,7 @@ async def decrypt_files(
 
             decrypted_files.append({"filename": orig_filename, "content": plaintext})
 
-    # 這邊回傳一個 zip 包含所有解密檔案
+    # 回傳一個 zip 包含所有解密檔案
     output_zip_buffer = BytesIO()
     with zipfile.ZipFile(output_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
         for f in decrypted_files:
