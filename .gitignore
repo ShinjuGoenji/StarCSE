@@ -11,5 +11,5 @@ venv/
 # test files
 test*
 
-user_keys/user_pk/*
-user_keys/user_sk/*
+user_keys/user_pk/*.json
+user_keys/user_sk/*.json
