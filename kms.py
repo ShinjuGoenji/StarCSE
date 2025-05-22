@@ -116,7 +116,7 @@ def create_user_keys(tag: str = "user-key"):
         "export",
         "--key-id",
         key_id + "_pk",
-        f"user_keys/user_pk/{key_id + "_pk"}.json",
+        f"user_keys/user_pk/{key_id}_pk.json",
     ]
 
     if not export_file(export_cmd):
