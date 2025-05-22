@@ -264,14 +264,20 @@ async def decrypt_files(
 
         aes_key_enc = zip_file.read(aes_key_name)
         # 解密 AES key
-        AES_key = private_key.decrypt(
-            aes_key_enc,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None,
-            ),
-        )
+        try:
+            AES_key = private_key.decrypt(
+                aes_key_enc,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None,
+                ),
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或檔案遭篡改",
+            )
 
         # 讀簽章 JSON
         if "signatures.json" not in namelist:
