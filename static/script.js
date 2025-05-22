@@ -129,6 +129,7 @@ uploadButton.addEventListener("click", () => {
     });
 
     formData.append("username", currentUser);
+    formData.append("recipients", JSON.stringify(addedUsers));
     fetch(`${backendUrl}/api/encrypt`, {
       method: "POST",
       body: formData,
