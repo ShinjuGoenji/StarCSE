@@ -1,17 +1,46 @@
+import os
 import re
 import subprocess
+import json
 
-KMS_URL = "https://9921-140-113-225-145.ngrok-free.app"
+CMD = [
+    "./test",
+    "--kms-url",
+    "https://9921-140-113-225-145.ngrok-free.app",
+    "--kms-accept-invalid-certs",
+    "kms",
+]
 
 
-def create_user_symmetric_key_cli(tag: str = "user-key"):
-    cmd = [
-        "./cosmian",
-        "--kms-url",
-        KMS_URL,
-        "--kms-accept-invalid-certs",
-        "kms",
-        "sym",
+def extract_aes_key():
+    with open("aes.json", "r") as f:
+        aes_json = json.load(f)
+
+    os.remove("aes.json")
+    try:
+        key_block = aes_json["value"][0]
+        key_value = key_block["value"][1]
+
+        for item in key_value["value"]:
+            if item["tag"] == "KeyMaterial":
+                return item["value"]
+    except:
+        return None
+
+
+def export_file(export_cmd: list):
+    cmd = CMD + export_cmd
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+
+    if result.returncode == 0:
+        return True
+    else:
+        return False
+
+
+def create_user_keys(tag: str = "user-key"):
+    cmd = CMD + [
+        "rsa",
         "keys",
         "create",
         "--tag",
@@ -19,18 +48,70 @@ def create_user_symmetric_key_cli(tag: str = "user-key"):
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
-    if result.returncode == 0:
-        # 從 stdout 抓 UUID (示例格式 "Unique identifier: <uuid>")
-        match = re.search(r"Unique identifier:\s*([a-f0-9\-]+)", result.stdout)
-        if match:
-            key_id = match.group(1)
-            print("Created key ID:", key_id)
-            return key_id
-        else:
-            print("Could not find key ID in output.")
-            print("Full output:", result.stdout)
-            return None
-    else:
-        print("Command failed:")
-        print(result.stderr)
+    if result.returncode != 0:
         return None
+
+    match = re.search(r"Public key unique identifier:\s*([a-f0-9\-]+)", result.stdout)
+    if not match:
+        return None
+
+    user_sk = match.group(1)
+    export_cmd = [
+        "rsa",
+        "keys",
+        "export",
+        "--key-id",
+        user_sk,
+        f"user_keys/user_sk/{user_sk}.json",
+    ]
+
+    if not export_file(export_cmd):
+        return None
+
+    user_pk = user_sk + "_pk"
+    export_cmd = [
+        "rsa",
+        "keys",
+        "export",
+        "--key-id",
+        user_pk,
+        f"user_keys/user_pk/{user_pk}.json",
+    ]
+
+    if not export_file(export_cmd):
+        return None
+
+    return user_sk
+
+
+def generate_AES_key() -> bytes:
+    cmd = CMD + [
+        "sym",
+        "keys",
+        "create",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        return None
+
+    match = re.search(r"Unique identifier:\s*([a-f0-9\-]+)", result.stdout)
+    if not match:
+        return None
+
+    key_id = match.group(1)
+    export_cmd = [
+        "sym",
+        "keys",
+        "export",
+        "--key-id",
+        key_id,
+        "aes.json",
+    ]
+
+    if not export_file(export_cmd):
+        return None
+
+    AES_key = extract_aes_key()
+
+    return bytes.fromhex(AES_key)

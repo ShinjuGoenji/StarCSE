@@ -8,7 +8,7 @@ import qrcode
 from io import BytesIO
 import hashlib
 
-from kms import create_user_symmetric_key_cli
+import kms
 from models import User, get_db
 
 router = APIRouter()
@@ -46,13 +46,13 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     hashed_pw = hash_password(password)
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
 
-    user_sk = create_user_symmetric_key_cli(tag=f"user-key-{username}")
+    user_key_id = kms.create_user_keys(tag=f"user-key-{username}")
     new_user = User(
         username=username,
         email=email,
         password_hash=hashed_pw,
         otp_secret=otp_secret,
-        user_sk=user_sk,
+        user_key_id=user_key_id,
     )
     db.add(new_user)
     await db.commit()

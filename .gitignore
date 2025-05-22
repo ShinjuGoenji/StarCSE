@@ -7,3 +7,9 @@ __pycache__/
 .venv/
 env/
 venv/
+
+# test files
+test*
+
+user_keys/user_pk/*
+user_keys/user_sk/*
