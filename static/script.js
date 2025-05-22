@@ -325,47 +325,67 @@ registerForm.addEventListener("submit", async function (event) {
     console.error("Error:", error);
   }
 });
+let allUsers = [];
 
-let selectedUsers = [];
+// 頁面載入時取得使用者名單
+async function fetchUserList() {
+  try {
+    const response = await fetch(`${backendUrl}/api/users`); // 假設後端路由/api/users回傳使用者清單
+    if (!response.ok) throw new Error("取得使用者清單失敗");
+    allUsers = await response.json(); // 假設回傳格式為字串陣列：["user1", "user2", ...]
+  } catch (error) {
+    console.error("Error fetching user list:", error);
+  }
+}
 
-function searchUsers(query) {
-  if (!query.trim()) {
-    document.getElementById("searchResults").innerHTML = "";
+// 過濾並顯示提示
+function showUserSuggestions(query) {
+  const suggestions = allUsers.filter((user) =>
+    user.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const suggestionBox = document.getElementById("userSuggestions");
+  suggestionBox.innerHTML = "";
+
+  if (query.length === 0 || suggestions.length === 0) {
+    suggestionBox.style.display = "none";
     return;
   }
 
-  fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
-    .then((res) => res.json())
-    .then((users) => {
-      const resultsDiv = document.getElementById("searchResults");
-      resultsDiv.innerHTML = "";
+  suggestions.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user;
+    li.style.padding = "5px";
+    li.style.cursor = "pointer";
 
-      users.forEach((user) => {
-        if (!selectedUsers.includes(user.username)) {
-          const div = document.createElement("div");
-          div.textContent = user.username;
-          div.onclick = () => selectUser(user.username);
-          resultsDiv.appendChild(div);
-        }
-      });
+    li.addEventListener("click", () => {
+      const input = document.getElementById("userSearchInput");
+      input.value = user;
+      suggestionBox.style.display = "none";
     });
-}
 
-function selectUser(username) {
-  selectedUsers.push(username);
-  updateSelectedRecipients();
-  document.getElementById("searchResults").innerHTML = "";
-}
+    li.addEventListener("mouseenter", () => {
+      li.style.backgroundColor = "#ddd";
+    });
+    li.addEventListener("mouseleave", () => {
+      li.style.backgroundColor = "white";
+    });
 
-function updateSelectedRecipients() {
-  const container = document.getElementById("selectedRecipients");
-  container.innerHTML = "";
-  selectedUsers.forEach((username) => {
-    const span = document.createElement("span");
-    span.textContent = username;
-    container.appendChild(span);
+    suggestionBox.appendChild(li);
   });
+
+  suggestionBox.style.display = "block";
 }
+
+// 綁定輸入事件
+const userSearchInput = document.getElementById("userSearchInput");
+userSearchInput.addEventListener("input", (e) => {
+  const query = e.target.value;
+  showUserSuggestions(query);
+});
+
+// 初始化
+fetchUserList();
 
 // 初始化頁面
 initializePage();

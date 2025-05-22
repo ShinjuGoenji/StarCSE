@@ -1,335 +1,346 @@
 /* style.css */
 
 body {
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: #e0e0e0;
+  font-family: "Roboto", sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #e0e0e0;
 }
 
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 30px;
-    background: rgba(0, 0, 0, 0.5);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-    position: relative;
-    z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+  position: relative;
+  z-index: 10;
 }
 
 h1 {
-    text-align: center;
-    flex-grow: 1;
-    margin: 0;
-    font-size: 28px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #00d4ff;
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+  text-align: center;
+  flex-grow: 1;
+  margin: 0;
+  font-size: 28px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
 }
 
 .auth-buttons {
-    display: flex;
-    gap: 15px;
+  display: flex;
+  gap: 15px;
 }
 
 .auth-buttons button {
-    background: linear-gradient(45deg, #00d4ff, #007bff);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 .auth-buttons button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
 
 .welcome-message {
-    font-size: 16px;
-    color: #00d4ff;
-    text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
-    margin-right: 15px;
+  font-size: 16px;
+  color: #00d4ff;
+  text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+  margin-right: 15px;
 }
 
 .container {
-    display: flex;
-    height: calc(100vh - 70px);
+  display: flex;
+  height: calc(100vh - 70px);
 }
 
 nav {
-    width: 250px;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 20px;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-    position: fixed;
-    height: calc(100vh - 70px);
-    overflow-y: auto;
+  width: 250px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  position: fixed;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
 }
 
 nav ul {
-    list-style-type: none;
-    padding: 0;
+  list-style-type: none;
+  padding: 0;
 }
 
 nav ul li {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 nav ul li a {
-    color: #e0e0e0;
-    text-decoration: none;
-    font-size: 18px;
-    display: block;
-    padding: 10px;
-    border-radius: 5px;
-    transition: all 0.3s;
-    cursor: pointer;
+  color: #e0e0e0;
+  text-decoration: none;
+  font-size: 18px;
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+  transition: all 0.3s;
+  cursor: pointer;
 }
 
 nav ul li a:hover {
-    background: linear-gradient(45deg, #00d4ff, #007bff);
-    color: white;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 main {
-    flex: 1;
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    margin-left: 270px;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+  flex: 1;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin-left: 270px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
 main h2 {
-    font-size: 32px;
-    color: #00d4ff;
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  font-size: 32px;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 main p {
-    font-size: 20px;
+  font-size: 20px;
 }
 
 .content-section {
-    display: none;
-    width: 100%;
-    height: 100%;
-    position: relative;
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
 
 .content-section.active {
-    display: block;
+  display: block;
 }
 
 .form-container {
-    background: rgba(0, 0, 0, 0.7);
-    padding: 30px 50px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-    width: 350px;
-    text-align: center;
-    margin: 0 auto;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 30px 50px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  width: 350px;
+  text-align: center;
+  margin: 0 auto;
 }
 
 .form-group {
-    margin-bottom: 20px;
-    text-align: left;
+  margin-bottom: 20px;
+  text-align: left;
 }
 
 label {
-    display: block;
-    font-size: 16px;
-    margin-bottom: 5px;
-    color: #e0e0e0;
+  display: block;
+  font-size: 16px;
+  margin-bottom: 5px;
+  color: #e0e0e0;
 }
 
 input {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #00d4ff;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #e0e0e0;
-    box-sizing: border-box;
-    transition: all 0.3s;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #00d4ff;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  box-sizing: border-box;
+  transition: all 0.3s;
 }
 
 input:focus {
-    outline: none;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-    border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  border-color: #007bff;
 }
 
 button {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(45deg, #00d4ff, #007bff);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
 
 button:disabled {
-    background: #555;
-    cursor: not-allowed;
+  background: #555;
+  cursor: not-allowed;
 }
 
 .error {
-    color: red;
-    font-size: 14px;
-    margin-top: 5px;
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
 }
 
 .login-link,
 .register-link {
-    margin-top: 15px;
-    font-size: 14px;
+  margin-top: 15px;
+  font-size: 14px;
 }
 
 .login-link a,
 .register-link a {
-    color: #00d4ff;
-    text-decoration: none;
-    transition: all 0.3s;
+  color: #00d4ff;
+  text-decoration: none;
+  transition: all 0.3s;
 }
 
 .login-link a:hover,
 .register-link a:hover {
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 .drop-area {
-    width: 80%;
-    height: 300px;
-    border: 2px dashed #00d4ff;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.5);
-    transition: all 0.3s;
-    margin: 0 auto;
-    position: relative;
-    top: 100px;
+  width: 80%;
+  height: 300px;
+  border: 2px dashed #00d4ff;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+  transition: all 0.3s;
+  margin: 60px auto 0 auto; /* 加上 margin-top 取代原本 top */
 }
 
 .drop-area.dragover {
-    background: rgba(0, 212, 255, 0.2);
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+  background: rgba(0, 212, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
 }
 
 .drop-area p {
-    font-size: 20px;
-    color: #e0e0e0;
-    text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+  font-size: 20px;
+  color: #e0e0e0;
+  text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
 }
 
 .file-list {
-    margin-top: 20px;
-    font-size: 16px;
-    color: #e0e0e0;
+  margin-top: 20px;
+  font-size: 16px;
+  color: #e0e0e0;
 }
 
 .upload-button {
-    margin-top: 60px;
-    padding: 10px 20px;
-    background: linear-gradient(45deg, #00d4ff, #007bff);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  margin-top: 60px;
+  padding: 10px 20px;
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 .upload-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
 
 .text-left-top {
-    position: absolute;
-    top: 0;
-    left: 0;
-    padding: 10px;
-    text-align: left;
+  /* 移除 absolute */
+  position: static; /* 或乾脆移除 position 這一行 */
+  padding: 10px 0;
+  text-align: left;
+  font-size: 24px;
+  font-weight: bold;
+  color: #00d4ff;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+  margin-left: 10%;
 }
 
 .qr-code {
-    margin-top: 20px;
-    text-align: center;
+  margin-top: 20px;
+  text-align: center;
 }
 
 .qr-code img {
-    max-width: 200px;
-    border: 1px solid #00d4ff;
-    border-radius: 5px;
+  max-width: 200px;
+  border: 1px solid #00d4ff;
+  border-radius: 5px;
 }
 
 .login-prompt {
-    font-size: 20px;
-    color: #ff5555;
-    text-align: center;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  font-size: 20px;
+  color: #ff5555;
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.search-user {
+  width: 80%;
+  margin: 30px auto 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
-.search-results {
-    border: 1px solid #ccc;
-    max-height: 150px;
-    overflow-y: auto;
-    background: white;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .search-results div {
-    padding: 5px;
-    cursor: pointer;
-  }
-  
-  .search-results div:hover {
-    background-color: #eee;
-  }
-  
-  .selected-recipients {
-    margin-top: 10px;
-  }
-  
-  .selected-recipients span {
-    display: inline-block;
-    padding: 5px 10px;
-    background: #007bff;
-    color: white;
-    border-radius: 5px;
-    margin-right: 5px;
-    margin-bottom: 5px;
-  }
-  
+.search-user input {
+  flex: 4; /* 大約 80% 寬 */
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #00d4ff;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.search-user input:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.search-user button {
+  flex: 1; /* 大約 20% 寬 */
+  padding: 10px;
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  min-width: 100px; /* 避免太小 */
+}
+
+.search-user button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+}
