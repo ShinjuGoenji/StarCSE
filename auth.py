@@ -46,13 +46,14 @@ async def register(data: dict, db: AsyncSession = Depends(get_db)):
     hashed_pw = hash_password(password)
     otp_secret, qr_code_url = generate_otp_secret_and_qr(username)
 
-    user_key_id = kms.create_user_keys(tag=f"user-key-{username}")
+    user_pk, user_sk = kms.create_user_keys(tag=f"user-key-{username}")
     new_user = User(
         username=username,
         email=email,
         password_hash=hashed_pw,
         otp_secret=otp_secret,
-        user_key_id=user_key_id,
+        user_sk=user_sk,
+        user_pk=user_pk,
     )
     db.add(new_user)
     await db.commit()
@@ -88,10 +89,10 @@ async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
     return [{"username": user.username} for user in users]
 
 
-@router.get("/api/users/search")
-async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
-    # 搜尋 username 包含 q 字串，忽略大小寫
-    result = await db.execute(select(User).where(User.username.ilike(f"%{q}%")))
-    users = result.scalars().all()
-    # 只回傳 username 字串列表，方便前端處理
-    return [user.username for user in users]
+# @router.get("/api/users/search")
+# async def search_users(q: str = Query(...), db: AsyncSession = Depends(get_db)):
+#     # 搜尋 username 包含 q 字串，忽略大小寫
+#     result = await db.execute(select(User).where(User.username.ilike(f"%{q}%")))
+#     users = result.scalars().all()
+#     # 只回傳 username 字串列表，方便前端處理
+#     return [user.username for user in users]

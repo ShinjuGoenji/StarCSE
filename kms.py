@@ -28,6 +28,48 @@ def extract_aes_key():
         return None
 
 
+def extract_user_keys(user_key_id: str):
+    with open(f"user_keys/user_sk/{user_key_id}.json", "r") as f:
+        user_sk_json = json.load(f)
+    os.remove(f"user_keys/user_sk/{user_key_id}.json")
+
+    try:
+        key_material = None
+        for item in user_sk_json["value"]:
+            for subitem in item["value"]:
+                if subitem["tag"] == "KeyValue":
+                    for kv in subitem["value"]:
+                        if kv["tag"] == "KeyMaterial":
+                            key_material = kv["value"]
+                            break
+
+        if key_material:
+            user_sk = key_material
+    except:
+        return None, None
+
+    with open(f"user_keys/user_pk/{user_key_id}_pk.json", "r") as f:
+        user_pk_json = json.load(f)
+    os.remove(f"user_keys/user_pk/{user_key_id}_pk.json")
+
+    try:
+        key_material = None, None
+        for item in user_pk_json["value"]:
+            for subitem in item["value"]:
+                if subitem["tag"] == "KeyValue":
+                    for kv in subitem["value"]:
+                        if kv["tag"] == "KeyMaterial":
+                            key_material = kv["value"]
+                            break
+
+        if key_material:
+            user_pk = key_material
+    except:
+        return None, None
+
+    return user_pk, user_sk
+
+
 def export_file(export_cmd: list):
     cmd = CMD + export_cmd
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
@@ -55,33 +97,35 @@ def create_user_keys(tag: str = "user-key"):
     if not match:
         return None
 
-    user_sk = match.group(1)
+    key_id = match.group(1)
     export_cmd = [
         "rsa",
         "keys",
         "export",
         "--key-id",
-        user_sk,
-        f"user_keys/user_sk/{user_sk}.json",
+        key_id,
+        f"user_keys/user_sk/{key_id}.json",
     ]
 
     if not export_file(export_cmd):
         return None
 
-    user_pk = user_sk + "_pk"
+    key_id = key_id + "_pk"
     export_cmd = [
         "rsa",
         "keys",
         "export",
         "--key-id",
-        user_pk,
-        f"user_keys/user_pk/{user_pk}.json",
+        key_id,
+        f"user_keys/user_pk/{key_id}.json",
     ]
 
     if not export_file(export_cmd):
         return None
 
-    return user_sk
+    user_pk, user_sk = extract_user_keys(user_sk)
+
+    return user_pk, user_sk
 
 
 def generate_AES_key() -> bytes:
