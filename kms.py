@@ -6,7 +6,7 @@ import json
 CMD = [
     "./cosmian",
     "--kms-url",
-    "https://065e-140-113-225-145.ngrok-free.app",
+    "https://0f9b-140-113-225-145.ngrok-free.app",
     "--kms-accept-invalid-certs",
     "kms",
 ]
