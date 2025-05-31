@@ -132,27 +132,37 @@ function fetchFileList() {
 // Function to download the file
 function downloadFile(fileId) {
   fetch(`${backendUrl}/api/files/download?file_id=${fileId}`, {
-    method: "GET", // GET 不允許有 body
+    method: "GET",
   })
-    .then((response) => {
+    .then(async (response) => {
       if (!response.ok) {
-        return response.json().then((errorData) => {
-          console.error("Backend error:", errorData);
-          throw new Error(errorData.detail || "Failed to download file");
-        });
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to download file");
       }
-      return response.blob();
-    })
-    .then((blob) => {
+
+      const disposition = response.headers.get("Content-Disposition");
+      let filename = `file_${fileId}`;
+
+      if (disposition && disposition.includes("filename=")) {
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match?.[1]) {
+          filename = match[1];
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `file_${fileId}`; // 可改成真正的 file name
+      a.href = url;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
+      URL.revokeObjectURL(url);
     })
     .catch((error) => {
-      console.error("Error:", error);
+      console.error("Download error:", error);
       alert(`Failed to download file. Reason: ${error.message}`);
     });
 }

@@ -58,7 +58,11 @@ async def download_file(file_id: int = Query(...), db: AsyncSession = Depends(ge
         raise HTTPException(status_code=404, detail=f"{file_path} not found on server")
 
     # Return the file as a response
-    return FileResponse(file_path, filename=file.file_name)
+    return FileResponse(
+        file_path,
+        filename=file.file_name,
+        media_type="application/octet-stream",
+    )
 
 
 # Delete file by ID
