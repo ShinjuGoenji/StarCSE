@@ -64,7 +64,6 @@ async def download_file(file_id: int = Form(...), db: AsyncSession = Depends(get
 # Delete file by ID
 @router.delete("/api/files/delete")
 async def delete_file(file_id: int = Form(...), db: AsyncSession = Depends(get_db)):
-
     # Get the file details from the database
     stmt = select(Files).filter(Files.id == file_id)
     result = await db.execute(stmt)
@@ -73,7 +72,15 @@ async def delete_file(file_id: int = Form(...), db: AsyncSession = Depends(get_d
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Delete the file record from the database
+    # Delete related records in user_files first
+    stmt = select(UserFiles).filter(UserFiles.file_id == file_id)
+    result = await db.execute(stmt)
+    user_files = result.scalars().all()
+
+    for user_file in user_files:
+        await db.delete(user_file)
+
+    # Now delete the file record from the database
     await db.delete(file)
     await db.commit()
 
