@@ -47,14 +47,14 @@ async def download_file(file_id: int, db: AsyncSession = Depends(get_db)):
     file = result.scalar_one_or_none()
 
     if not file:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found, cannot fetch")
 
     # Path to the file storage (Assuming the files are stored in a directory called 'uploads')
     file_path = os.path.join(file.file_dir)
 
     # Check if file exists
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found on server")
+        raise HTTPException(status_code=404, detail=f"{file_path} not found on server")
 
     # Return the file as a response
     return FileResponse(file_path, filename=file.file_name)

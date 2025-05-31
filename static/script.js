@@ -135,7 +135,10 @@ function downloadFile(fileId) {
     method: "GET",
   })
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to download file");
+      if (!response.ok) {
+        const errorData = response.json();
+        throw new Error(errorData.detail || "Failed to download file");
+      }
       return response.blob();
     })
     .then((blob) => {
@@ -161,7 +164,10 @@ function deleteFile(fileId) {
     method: "DELETE",
   })
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to delete file");
+      if (!response.ok) {
+        const errorData = response.json();
+        throw new Error(errorData.detail || "Failed to delete file");
+      }
       alert("File deleted successfully!");
       fetchFileList(); // Refresh the file list after deletion
     })
@@ -346,7 +352,7 @@ decryptButton.addEventListener("click", () => {
   }
 
   if (decryptFilesToUpload.length !== 1) {
-    alert("請上傳一個要解密的檔案。 len=${decryptFilesToUpload.length}");
+    alert(`請上傳一個要解密的檔案。 len=${decryptFilesToUpload.length}`);
     return;
   }
 
