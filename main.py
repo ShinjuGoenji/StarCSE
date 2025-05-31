@@ -1,4 +1,6 @@
 import base64
+import datetime
+import hashlib
 from io import BytesIO
 import json
 import zipfile
@@ -16,7 +18,7 @@ from models import Base, engine
 from auth import router as auth_router
 
 import kms
-from models import User, get_db
+from models import User, get_db, Files, UserFiles
 
 #################################################
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -174,7 +176,8 @@ def encrypt_AES_key(AES_key: bytes, user_pk: bytes) -> bytes:
 @app.post("/api/encrypt")
 async def encrypt_files(
     username: str = Form(...),
-    recipients: str = Form(...),  # JSON 字串形式的使用者名稱清單
+    recipients: str = Form(...),
+    isUpload: bool = Form(False),
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
 ):
@@ -182,57 +185,105 @@ async def encrypt_files(
         raise HTTPException(status_code=400, detail="No files uploaded")
 
     recipient_list = json.loads(recipients)
-    all_recipients = [username] + recipient_list  # 包含自己
+    all_recipients = [username] + recipient_list
 
-    # 1. 產生 AES 金鑰
+    # 1. Generate AES key
     AES_key: bytes = kms.generate_AES_key()
 
-    # 2. 加密檔案
+    # 2. Encrypt files
     encrypted_files: List[dict] = await encrypt_files_with_AES(
         files=files, AES_key=AES_key
     )
-    # dict 結構: {"filename": "file.txt", "content": b"...encrypted..."}
+    # Structure: {"filename": "...", "content": b"..."}
 
-    # 3. 取得簽名用的金鑰
+    # 3. Sign files
     user_pk, user_sk = await get_user_keys(username=username, db=db)
     signatures: List[dict] = sign_encrypted_files(
         user_sk=user_sk, encrypted_files=encrypted_files
     )
-    user_pk_pem = serialization.load_der_public_key(
-        user_pk, backend=default_backend()
-    ).public_bytes(
+
+    user_pk_pem = user_pk.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 
-    # dict 結構: {"filename": ..., "signature": ...}
-
-    # 4. 為每位共享者建立一份獨立的 ZIP 包（含專屬的 AES key 加密）
-    outer_zip_buffer = BytesIO()
-    with zipfile.ZipFile(outer_zip_buffer, "w", zipfile.ZIP_DEFLATED) as outer_zip:
+    if isUpload:
         for recipient in all_recipients:
+            # Encrypt AES key for this recipient
             recipient_pk, _ = await get_user_keys(username=recipient, db=db)
             enc_AES_key = encrypt_AES_key(AES_key, recipient_pk)
 
-            # 建立該 recipient 的子 ZIP
+            # Create sub-zip per recipient
             sub_zip_buffer = BytesIO()
             with zipfile.ZipFile(sub_zip_buffer, "w", zipfile.ZIP_DEFLATED) as sub_zip:
                 for file in encrypted_files:
                     sub_zip.writestr(file["filename"], file["content"])
-
                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
                 sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
                 sub_zip.writestr("verify.key", user_pk_pem)
 
-            sub_zip_buffer.seek(0)
-            outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
+            # Generate hashed filename
+            hash_input = f"{username}-{datetime.now().isoformat()}-{recipient}.zip"
+            hash_filename = hashlib.sha256(hash_input.encode()).hexdigest() + ".zip"
 
-    outer_zip_buffer.seek(0)
-    return StreamingResponse(
-        outer_zip_buffer,
-        media_type="application/x-zip-compressed",
-        headers={"Content-Disposition": f"attachment; filename=encrypted_packages.zip"},
-    )
+            # Store to upload/recipient/
+            recipient_dir = os.path.join("upload", recipient)
+            os.makedirs(recipient_dir, exist_ok=True)
+            zip_path = os.path.join(recipient_dir, hash_filename)
+
+            # Write zip to file
+            with open(zip_path, "wb") as f:
+                f.write(sub_zip_buffer.getvalue())
+
+            # Insert row(s) into Files table (one for each original file)
+            for original_file in files:
+                new_file = Files(file_name=original_file.filename, file_dir=zip_path)
+                db.add(new_file)
+                await db.flush()  # Get new_file.id without full commit
+
+                # Get recipient's User.id
+                user_result = await db.execute(
+                    select(User).where(User.username == recipient)
+                )
+                user = user_result.scalar_one_or_none()
+                if user:
+                    relation = UserFiles(user_id=user.id, file_id=new_file.id)
+                    db.add(relation)
+
+        await db.commit()
+        return {"message": "Files encrypted and uploaded successfully."}
+
+    else:
+        # Non-upload mode: return single zip via StreamingResponse
+        outer_zip_buffer = BytesIO()
+        with zipfile.ZipFile(outer_zip_buffer, "w", zipfile.ZIP_DEFLATED) as outer_zip:
+            for recipient in all_recipients:
+                recipient_pk, _ = await get_user_keys(username=recipient, db=db)
+                enc_AES_key = encrypt_AES_key(AES_key, recipient_pk)
+
+                sub_zip_buffer = BytesIO()
+                with zipfile.ZipFile(
+                    sub_zip_buffer, "w", zipfile.ZIP_DEFLATED
+                ) as sub_zip:
+                    for file in encrypted_files:
+                        sub_zip.writestr(file["filename"], file["content"])
+                    sub_zip.writestr(
+                        "signatures.json", json.dumps(signatures, indent=2)
+                    )
+                    sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
+                    sub_zip.writestr("verify.key", user_pk_pem)
+
+                sub_zip_buffer.seek(0)
+                outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
+
+        outer_zip_buffer.seek(0)
+        return StreamingResponse(
+            outer_zip_buffer,
+            media_type="application/x-zip-compressed",
+            headers={
+                "Content-Disposition": "attachment; filename=encrypted_packages.zip"
+            },
+        )
 
 
 @app.post("/api/decrypt")

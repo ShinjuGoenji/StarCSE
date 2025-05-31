@@ -80,12 +80,12 @@ function fetchFileList() {
     return;
   }
 
+  const formData = new FormData();
+  formData.append("username", currentUser);
+
   fetch(`${backendUrl}/api/files`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
+    method: "POST",
+    body: formData,
   })
     .then((response) => {
       if (!response.ok) throw new Error("Failed to fetch file list");
@@ -94,6 +94,7 @@ function fetchFileList() {
     .then((data) => {
       const fileListContainer = document.getElementById("fileListContainer");
       fileListContainer.innerHTML = "";
+
       if (data.files.length === 0) {
         const p = document.createElement("p");
         p.textContent = "No files found.";
@@ -102,15 +103,19 @@ function fetchFileList() {
         data.files.forEach((file) => {
           const div = document.createElement("div");
           div.className = "file-item";
+
           const p = document.createElement("p");
           p.textContent = file.name;
+
           const downloadButton = document.createElement("button");
           downloadButton.textContent = "Download";
-          downloadButton.onclick = () => downloadFile(file.name);
+          downloadButton.onclick = () => downloadFile(file.id); // Update to use file ID for download
+
           const deleteButton = document.createElement("button");
           deleteButton.textContent = "Delete";
           deleteButton.className = "delete-button";
-          deleteButton.onclick = () => deleteFile(file.name);
+          deleteButton.onclick = () => deleteFile(file.id); // Update to use file ID for deletion
+
           div.appendChild(p);
           div.appendChild(downloadButton);
           div.appendChild(deleteButton);
@@ -124,34 +129,21 @@ function fetchFileList() {
     });
 }
 
-// 下載檔案
-function downloadFile(filename) {
-  if (!isLoggedIn) {
-    alert("Please login first!");
-    showSection("login");
-    return;
-  }
-
-  fetch(`${backendUrl}/api/download/${encodeURIComponent(filename)}`, {
+// Function to download the file
+function downloadFile(fileId) {
+  fetch(`${backendUrl}/api/files/${fileId}/download`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
   })
     .then((response) => {
       if (!response.ok) throw new Error("Failed to download file");
       return response.blob();
     })
     .then((blob) => {
-      const url = window.URL.createObjectURL(blob);
+      // Create a link element to trigger the download
       const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
+      a.href = URL.createObjectURL(blob);
+      a.download = `file_${fileId}`; // Or use the file's original name
       a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      alert(`File ${filename} downloaded successfully!`);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -159,31 +151,24 @@ function downloadFile(filename) {
     });
 }
 
-// 刪除檔案
-function deleteFile(filename) {
-  if (!isLoggedIn) {
-    alert("Please login first!");
-    showSection("login");
+// Function to delete the file
+function deleteFile(fileId) {
+  if (!confirm("Are you sure you want to delete this file?")) {
     return;
   }
 
-  if (confirm(`Are you sure you want to delete the file "${filename}"?`)) {
-    fetch(`${backendUrl}/api/delete/${encodeURIComponent(filename)}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
+  fetch(`${backendUrl}/api/files/${fileId}/delete`, {
+    method: "DELETE",
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to delete file");
+      alert("File deleted successfully!");
+      fetchFileList(); // Refresh the file list after deletion
     })
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to delete file");
-        alert(`File ${filename} deleted successfully!`);
-        fetchFileList(); // 刷新檔案列表
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("Failed to delete file. Please try again.");
-      });
-  }
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("Failed to delete file. Please try again.");
+    });
 }
 
 // 登出功能
@@ -204,6 +189,7 @@ function logout() {
 // Encrypt Section Logic
 const dropArea = document.getElementById("dropArea");
 const fileList = document.getElementById("fileList");
+const encryptButton = document.getElementById("encryptButton");
 const uploadButton = document.getElementById("uploadButton");
 const algorithmSelect = document.getElementById("algorithmSelect");
 let filesToUpload = [];
@@ -221,10 +207,16 @@ dropArea.addEventListener("drop", (e) => {
   e.preventDefault();
   dropArea.classList.remove("dragover");
   const files = e.dataTransfer.files;
-  handleFiles(files, fileList, uploadButton, "encrypt");
+  handleFiles(files, fileList, encryptButton, uploadButton, "encrypt");
 });
 
-function handleFiles(files, fileListElement, buttonElement, section) {
+function handleFiles(
+  files,
+  fileListElement,
+  buttonElement1,
+  buttonElement2,
+  section
+) {
   const filesArray = Array.from(files);
   fileListElement.innerHTML = "";
   filesArray.forEach((file) => {
@@ -233,7 +225,8 @@ function handleFiles(files, fileListElement, buttonElement, section) {
     fileListElement.appendChild(p);
   });
   if (filesArray.length > 0) {
-    buttonElement.style.display = "block";
+    buttonElement1.style.display = "block";
+    buttonElement2.style.display = "block";
   }
   if (section === "encrypt") {
     filesToUpload = filesArray;
@@ -242,7 +235,7 @@ function handleFiles(files, fileListElement, buttonElement, section) {
   }
 }
 
-uploadButton.addEventListener("click", () => {
+encryptButton.addEventListener("click", () => {
   if (!isLoggedIn) {
     alert("Please login first!");
     showSection("login");
@@ -257,6 +250,7 @@ uploadButton.addEventListener("click", () => {
     });
 
     formData.append("username", currentUser);
+    formData.append("isUpload", false);
     formData.append("recipients", JSON.stringify(addedUsers));
     fetch(`${backendUrl}/api/encrypt`, {
       method: "POST",
@@ -275,6 +269,43 @@ uploadButton.addEventListener("click", () => {
         URL.revokeObjectURL(url);
         alert("Files encrypted and downloaded successfully!");
         fileList.innerHTML = "";
+        encryptButton.style.display = "none";
+        uploadButton.style.display = "none";
+        filesToUpload = [];
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Encryption failed. Please try again.");
+      });
+  }
+});
+
+uploadButton.addEventListener("click", () => {
+  if (!isLoggedIn) {
+    alert("Please login first!");
+    showSection("login");
+    return;
+  }
+
+  if (confirm("Are you sure you want to encrypt these files?")) {
+    const formData = new FormData();
+
+    filesToUpload.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    formData.append("username", currentUser);
+    formData.append("isUpload", true);
+    formData.append("recipients", JSON.stringify(addedUsers));
+    fetch(`${backendUrl}/api/encrypt`, {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Encryption failed");
+        alert("Files encrypted and downloaded successfully!");
+        fileList.innerHTML = "";
+        encryptButton.style.display = "none";
         uploadButton.style.display = "none";
         filesToUpload = [];
       })

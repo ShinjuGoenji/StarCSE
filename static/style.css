@@ -220,10 +220,17 @@ button:disabled {
   text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
 }
 .file-list {
-  margin-top: 20px;
+  position: absolute;
+  top: 340px;
+  left: 10%;
   font-size: 16px;
   color: #e0e0e0;
 }
+
+.file-list p {
+  font-size: 18px;
+}
+
 .file-list-container {
   margin-top: 20px;
   font-size: 16px;
@@ -232,20 +239,22 @@ button:disabled {
   margin-left: auto;
   margin-right: auto;
 }
-.file-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+.file-list {
+  position: absolute;
+  top: 350px;
+  left: 10%;
+  font-size: 16px;
+  color: #e0e0e0;
+  width: 30%; /* Adjust width as needed */
 }
-.file-item p {
-  margin: 0;
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+.file-list p {
+  font-size: 12px;
+  white-space: nowrap; /* Prevents the text from wrapping */
+  overflow: hidden; /* Hides the overflow */
+  text-overflow: ellipsis; /* Adds the "..." when text is too long */
 }
+
 .file-item button {
   width: auto;
   padding: 8px 16px;
@@ -258,9 +267,13 @@ button:disabled {
 .file-item .delete-button:hover {
   box-shadow: 0 0 20px rgba(255, 85, 85, 0.8);
 }
-.upload-button {
+.encrypt-button {
+  position: absolute; /* Changed to fixed so it's always at the bottom */
+  top: 570px;
   margin-top: 60px;
   padding: 10px 20px;
+  left: 10%;
+  width: 39%;
   background: linear-gradient(45deg, #00d4ff, #007bff);
   color: white;
   border: none;
@@ -270,6 +283,28 @@ button:disabled {
   transition: all 0.3s;
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
+
+.encrypt-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+}
+.upload-button {
+  position: absolute; /* Changed to fixed so it's always at the bottom */
+  top: 570px;
+  margin-top: 60px;
+  padding: 10px 20px;
+  right: 10%;
+  width: 39%;
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
 .upload-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
@@ -302,6 +337,7 @@ button:disabled {
 .algorithm-selector {
   position: absolute;
   top: 360px;
+  right: 10%;
   background: rgba(0, 0, 0, 0.7);
   padding: 15px;
   border-radius: 8px;
