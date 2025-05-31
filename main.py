@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Base, engine
 from auth import router as auth_router
+from drive import router as drive_router
 
 import kms
 from models import User, get_db, Files, UserFiles
@@ -43,6 +44,7 @@ os.makedirs(DECRYPT_FOLDER, exist_ok=True)
 
 # Register auth router
 app.include_router(auth_router)
+app.include_router(drive_router)
 
 
 # Create tables

@@ -303,7 +303,7 @@ uploadButton.addEventListener("click", () => {
     })
       .then((response) => {
         if (!response.ok) throw new Error("Encryption failed");
-        alert("Files encrypted and downloaded successfully!");
+        alert("Files encrypted and uploaded successfully!");
         fileList.innerHTML = "";
         encryptButton.style.display = "none";
         uploadButton.style.display = "none";
