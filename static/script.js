@@ -250,23 +250,30 @@ uploadButton.addEventListener("click", () => {
   }
 
   if (confirm("Are you sure you want to encrypt these files?")) {
-    const selectedAlgorithm = algorithmSelect.value;
     const formData = new FormData();
-    formData.append("algorithm", selectedAlgorithm);
+
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
 
+    formData.append("username", currentUser);
+    formData.append("recipients", JSON.stringify(addedUsers));
     fetch(`${backendUrl}/api/encrypt`, {
       method: "POST",
       body: formData,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
     })
       .then((response) => {
         if (!response.ok) throw new Error("Encryption failed");
-        alert(`Files encrypted successfully using ${selectedAlgorithm}!`);
+        return response.blob(); // ZIP file
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "encrypted_package.zip";
+        link.click();
+        URL.revokeObjectURL(url);
+        alert("Files encrypted and downloaded successfully!");
         fileList.innerHTML = "";
         uploadButton.style.display = "none";
         filesToUpload = [];
@@ -307,29 +314,42 @@ decryptButton.addEventListener("click", () => {
     return;
   }
 
-  if (confirm("Are you sure you want to decrypt these files?")) {
+  if (decryptFilesToUpload.length !== 1) {
+    alert("請上傳一個要解密的檔案。");
+    return;
+  }
+
+  if (confirm("Are you sure you want to decrypt this file?")) {
     const formData = new FormData();
-    decryptFilesToUpload.forEach((file) => {
-      formData.append("files", file);
-    });
+    formData.append("file", decryptFilesToUpload[0]);
+    formData.append("username", currentUser);
 
     fetch(`${backendUrl}/api/decrypt`, {
       method: "POST",
       body: formData,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
     })
-      .then((response) => {
-        if (!response.ok) throw new Error("Decryption failed");
-        alert("Files decrypted successfully!");
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail);
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "decrypted_file.zip";
+        link.click();
+        URL.revokeObjectURL(url);
+        alert("File decrypted and downloaded successfully!");
         decryptFileList.innerHTML = "";
         decryptButton.style.display = "none";
         decryptFilesToUpload = [];
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Decryption failed. Please try again.");
+        alert("解密失敗：" + error.message);
       });
   }
 });
