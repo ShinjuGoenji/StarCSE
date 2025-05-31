@@ -80,12 +80,12 @@ function fetchFileList() {
     return;
   }
 
-  const formData = new FormData();
-  formData.append("username", currentUser);
-
   fetch(`${backendUrl}/api/files`, {
     method: "POST",
-    body: formData,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ currentUser }),
   })
     .then((response) => {
       if (!response.ok) throw new Error("Failed to fetch file list");

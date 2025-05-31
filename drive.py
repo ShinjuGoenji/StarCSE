@@ -12,7 +12,7 @@ router = APIRouter()
 # Fetching file list for a user
 @router.post("/api/files")
 async def fetch_file_list(data: dict, db: AsyncSession = Depends(get_db)):
-    username = data.get("username")
+    username = data.get("currentUser")
 
     if not username:
         raise HTTPException(status_code=400, detail="Username is required")
