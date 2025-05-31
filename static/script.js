@@ -1,3 +1,6 @@
+const backendUrl = "https://starcse.onrender.com";
+// const backendUrl = 'https://d18d-140-113-212-14.ngrok-free.app/'
+
 let isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 let currentUser = localStorage.getItem("username") || "";
 
