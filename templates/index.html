@@ -10,7 +10,7 @@
   <body>
     <header>
       <h1>Oasis Star</h1>
-      <div class="auth-buttons" id="authButtons" style="display: flex">
+      <div class="auth-buttons" id="authButtons">
         <button onclick="showSection('login')">Login</button>
         <button onclick="showSection('register')">Register</button>
       </div>
@@ -25,6 +25,7 @@
           <li><a onclick="showSection('home')">Home</a></li>
           <li><a onclick="showSection('encrypt')">Encrypt</a></li>
           <li><a onclick="showSection('decrypt')">Decrypt</a></li>
+          <li><a onclick="showSection('check-files')">Check My Files</a></li>
           <li><a onclick="showSection('about')">About</a></li>
         </ul>
       </nav>
@@ -40,31 +41,18 @@
           <div class="text-left-top">
             <h2>Encrypt Files</h2>
           </div>
-          <div id="encryptContent" style="display: none">
+          <div id="encryptContent">
+            <div class="algorithm-selector">
+              <label for="algorithmSelect">Encryption Algorithm:</label>
+              <select id="algorithmSelect">
+                <option value="AES">AES</option>
+                <option value="ChaCha">ChaCha20</option>
+              </select>
+            </div>
             <div class="drop-area" id="dropArea">
               <p>Drag and drop your files here to encrypt</p>
             </div>
             <div class="file-list" id="fileList"></div>
-            <div class="user-container">
-              <div class="search-user">
-                <div class="input-container">
-                  <input
-                    type="text"
-                    id="userSearchInput"
-                    placeholder="搜尋使用者..."
-                  />
-                  <ul id="userSuggestions"></ul>
-                </div>
-                <button onclick="addUser()">新增</button>
-              </div>
-
-              <div class="added-users-container">
-                <h3>已加入的使用者：</h3>
-                <div class="added-users-list">
-                  <ul id="addedUsers"></ul>
-                </div>
-              </div>
-            </div>
             <button
               class="upload-button"
               id="uploadButton"
@@ -76,7 +64,7 @@
           <div
             class="login-prompt"
             id="encryptLoginPrompt"
-            style="display: block"
+            style="display: none"
           >
             請先登入！
           </div>
@@ -85,7 +73,7 @@
           <div class="text-left-top">
             <h2>Decrypt Files</h2>
           </div>
-          <div id="decryptContent" style="display: none">
+          <div id="decryptContent">
             <div class="drop-area" id="decryptDropArea">
               <p>
                 Drag and drop your encrypted files and certificate here to
@@ -104,7 +92,24 @@
           <div
             class="login-prompt"
             id="decryptLoginPrompt"
-            style="display: block"
+            style="display: none"
+          >
+            請先登入！
+          </div>
+        </div>
+        <div id="check-files" class="content-section">
+          <div class="text-left-top">
+            <h2>Check My Files</h2>
+          </div>
+          <div id="checkFilesContent">
+            <div class="file-list-container" id="fileListContainer">
+              <!-- 檔案列表將在這裡顯示 -->
+            </div>
+          </div>
+          <div
+            class="login-prompt"
+            id="checkFilesLoginPrompt"
+            style="display: none"
           >
             請先登入！
           </div>
@@ -112,7 +117,7 @@
         <div id="about" class="content-section">
           <div class="text-left-top">
             <h2>About Us</h2>
-            <p>作者：許于軒 郭朝恩 鄭人傑</p>
+            <p>作者： 許于軒 郭朝恩 鄭人傑</p>
             <p>這是一個可以讓使用者線上加解密檔案的網站，</p>
             <p>使用者加密完檔案之後會產生certificate，</p>
             <p>接收到檔案的收件者可以拿檔案和certificate來網站上解密，</p>
@@ -129,7 +134,7 @@
                   type="text"
                   id="login-username"
                   name="login-username"
-                  required=""
+                  required
                 />
               </div>
               <div class="form-group">
@@ -138,17 +143,12 @@
                   type="password"
                   id="login-password"
                   name="login-password"
-                  required=""
+                  required
                 />
               </div>
               <div class="form-group">
                 <label for="login-otp">Two-Factor Code:</label>
-                <input
-                  type="text"
-                  id="login-otp"
-                  name="login-otp"
-                  required=""
-                />
+                <input type="text" id="login-otp" name="login-otp" required />
               </div>
               <button type="submit">Login</button>
               <div id="login-error" class="error"></div>
@@ -169,7 +169,7 @@
                   type="email"
                   id="register-email"
                   name="register-email"
-                  required=""
+                  required
                 />
               </div>
               <div class="form-group">
@@ -178,7 +178,7 @@
                   type="text"
                   id="register-username"
                   name="register-username"
-                  required=""
+                  required
                 />
               </div>
               <div class="form-group">
@@ -187,7 +187,7 @@
                   type="password"
                   id="register-password"
                   name="register-password"
-                  required=""
+                  required
                 />
               </div>
               <div class="form-group">
@@ -196,11 +196,11 @@
                   type="password"
                   id="register-confirm-password"
                   name="register-confirm-password"
-                  required=""
+                  required
                 />
                 <div id="register-password-error" class="error"></div>
               </div>
-              <button type="submit" id="register-submit" disabled="">
+              <button type="submit" id="register-submit" disabled>
                 Submit
               </button>
               <div id="register-error" class="error"></div>

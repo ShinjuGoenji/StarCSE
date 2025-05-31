@@ -1,17 +1,11 @@
-const backendUrl = "https://starcse.onrender.com";
-// const backendUrl = 'https://d18d-140-113-212-14.ngrok-free.app/'
-
-// 檢查登入狀態
 let isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 let currentUser = localStorage.getItem("username") || "";
 
-// 初始化頁面
 function initializePage() {
   updateHeader();
   updateSections();
 }
 
-// 更新右上角顯示
 function updateHeader() {
   const authButtons = document.getElementById("authButtons");
   const userInfo = document.getElementById("userInfo");
@@ -27,27 +21,33 @@ function updateHeader() {
   }
 }
 
-// 控制 Encrypt 和 Decrypt 區塊的顯示
 function updateSections() {
   const encryptContent = document.getElementById("encryptContent");
   const encryptLoginPrompt = document.getElementById("encryptLoginPrompt");
   const decryptContent = document.getElementById("decryptContent");
   const decryptLoginPrompt = document.getElementById("decryptLoginPrompt");
+  const checkFilesContent = document.getElementById("checkFilesContent");
+  const checkFilesLoginPrompt = document.getElementById(
+    "checkFilesLoginPrompt"
+  );
 
   if (isLoggedIn) {
     encryptContent.style.display = "block";
     encryptLoginPrompt.style.display = "none";
     decryptContent.style.display = "block";
     decryptLoginPrompt.style.display = "none";
+    checkFilesContent.style.display = "block";
+    checkFilesLoginPrompt.style.display = "none";
   } else {
     encryptContent.style.display = "none";
     encryptLoginPrompt.style.display = "block";
     decryptContent.style.display = "none";
     decryptLoginPrompt.style.display = "block";
+    checkFilesContent.style.display = "none";
+    checkFilesLoginPrompt.style.display = "block";
   }
 }
 
-// 切換頁面
 function showSection(sectionId) {
   const sections = document.querySelectorAll(".content-section");
   sections.forEach((section) => {
@@ -56,22 +56,136 @@ function showSection(sectionId) {
   const section = document.getElementById(sectionId);
   if (section) {
     section.classList.add("active");
+    if (sectionId === "check-files" && isLoggedIn) {
+      fetchFileList();
+    }
   } else {
     console.error(`Section with ID '${sectionId}' not found.`);
   }
 }
 
-// 登出功能
+function fetchFileList() {
+  if (!isLoggedIn) {
+    alert("Please login first!");
+    showSection("login");
+    return;
+  }
+
+  fetch(`${backendUrl}/api/files`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch file list");
+      return response.json();
+    })
+    .then((data) => {
+      const fileListContainer = document.getElementById("fileListContainer");
+      fileListContainer.innerHTML = "";
+      if (data.files.length === 0) {
+        const p = document.createElement("p");
+        p.textContent = "No files found.";
+        fileListContainer.appendChild(p);
+      } else {
+        data.files.forEach((file) => {
+          const div = document.createElement("div");
+          div.className = "file-item";
+          const p = document.createElement("p");
+          p.textContent = file.name;
+          const downloadButton = document.createElement("button");
+          downloadButton.textContent = "Download";
+          downloadButton.onclick = () => downloadFile(file.name);
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "Delete";
+          deleteButton.className = "delete-button";
+          deleteButton.onclick = () => deleteFile(file.name);
+          div.appendChild(p);
+          div.appendChild(downloadButton);
+          div.appendChild(deleteButton);
+          fileListContainer.appendChild(div);
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("Failed to fetch file list. Please try again.");
+    });
+}
+
+function downloadFile(filename) {
+  if (!isLoggedIn) {
+    alert("Please login first!");
+    showSection("login");
+    return;
+  }
+
+  fetch(`${backendUrl}/api/download/${encodeURIComponent(filename)}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to download file");
+      return response.blob();
+    })
+    .then((blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      alert(`File ${filename} downloaded successfully!`);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("Failed to download file. Please try again.");
+    });
+}
+
+function deleteFile(filename) {
+  if (!isLoggedIn) {
+    alert("Please login first!");
+    showSection("login");
+    return;
+  }
+
+  if (confirm(`Are you sure you want to delete the file "${filename}"?`)) {
+    fetch(`${backendUrl}/api/delete/${encodeURIComponent(filename)}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to delete file");
+        alert(`File ${filename} deleted successfully!`);
+        fetchFileList(); // 刷新檔案列表
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Failed to delete file. Please try again.");
+      });
+  }
+}
+
 function logout() {
-  if (confirm("確定要登出嗎？")) {
+  if (confirm("Are you sure you want to logout?")) {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("username");
+    localStorage.removeItem("token");
     isLoggedIn = false;
     currentUser = "";
     updateHeader();
     updateSections();
     showSection("login");
-    alert("已成功登出！");
+    alert("Logged out successfully!");
   }
 }
 
@@ -79,6 +193,7 @@ function logout() {
 const dropArea = document.getElementById("dropArea");
 const fileList = document.getElementById("fileList");
 const uploadButton = document.getElementById("uploadButton");
+const algorithmSelect = document.getElementById("algorithmSelect");
 let filesToUpload = [];
 
 dropArea.addEventListener("dragover", (e) => {
@@ -115,40 +230,31 @@ function handleFiles(files, fileListElement, buttonElement, section) {
   }
 }
 
-const encryptLoading = document.getElementById("encryptLoading");
-const decryptLoading = document.getElementById("decryptLoading");
-
 uploadButton.addEventListener("click", () => {
   if (!isLoggedIn) {
-    alert("請先登入！");
+    alert("Please login first!");
     showSection("login");
     return;
   }
 
   if (confirm("Are you sure you want to encrypt these files?")) {
+    const selectedAlgorithm = algorithmSelect.value;
     const formData = new FormData();
+    formData.append("algorithm", selectedAlgorithm);
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
 
-    formData.append("username", currentUser);
-    formData.append("recipients", JSON.stringify(addedUsers));
     fetch(`${backendUrl}/api/encrypt`, {
       method: "POST",
       body: formData,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     })
       .then((response) => {
         if (!response.ok) throw new Error("Encryption failed");
-        return response.blob(); // ZIP file
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "encrypted_package.zip";
-        link.click();
-        URL.revokeObjectURL(url);
-        alert("Files encrypted and downloaded successfully!");
+        alert(`Files encrypted successfully using ${selectedAlgorithm}!`);
         fileList.innerHTML = "";
         uploadButton.style.display = "none";
         filesToUpload = [];
@@ -184,46 +290,34 @@ decryptDropArea.addEventListener("drop", (e) => {
 
 decryptButton.addEventListener("click", () => {
   if (!isLoggedIn) {
-    alert("請先登入！");
+    alert("Please login first!");
     showSection("login");
     return;
   }
 
-  if (decryptFilesToUpload.length !== 1) {
-    alert("請上傳一個要解密的檔案。");
-    return;
-  }
-
-  if (confirm("Are you sure you want to decrypt this file?")) {
+  if (confirm("Are you sure you want to decrypt these files?")) {
     const formData = new FormData();
-    formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
-    formData.append("username", currentUser);
+    decryptFilesToUpload.forEach((file) => {
+      formData.append("files", file);
+    });
+
     fetch(`${backendUrl}/api/decrypt`, {
       method: "POST",
       body: formData,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     })
-      .then(async (response) => {
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail);
-        }
-        return response.blob();
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "decrypted_file.zip";
-        link.click();
-        URL.revokeObjectURL(url);
-        alert("File decrypted and downloaded successfully!");
+      .then((response) => {
+        if (!response.ok) throw new Error("Decryption failed");
+        alert("Files decrypted successfully!");
         decryptFileList.innerHTML = "";
         decryptButton.style.display = "none";
         decryptFilesToUpload = [];
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("解密失敗：" + error.message);
+        alert("Decryption failed. Please try again.");
       });
   }
 });
@@ -253,7 +347,7 @@ document
         throw new Error(data.message || "Login failed");
       }
 
-      // 登入成功，儲存狀態
+      localStorage.setItem("token", data.token);
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
       isLoggedIn = true;
@@ -344,117 +438,6 @@ registerForm.addEventListener("submit", async function (event) {
     console.error("Error:", error);
   }
 });
-
-let allUsers = [];
-
-// 頁面載入時取得所有使用者
-async function fetchUserList() {
-  try {
-    const response = await fetch(`${backendUrl}/api/users`);
-    if (!response.ok) throw new Error("取得使用者清單失敗");
-    allUsers = await response.json(); // ["user1", "user2", ...]
-  } catch (error) {
-    console.error("Error fetching user list:", error);
-  }
-}
-
-// 顯示符合搜尋條件的提示名單
-function showUserSuggestions(query) {
-  const suggestionBox = document.getElementById("userSuggestions");
-  suggestionBox.innerHTML = "";
-
-  if (!query) {
-    suggestionBox.style.display = "none";
-    return;
-  }
-
-  const suggestions = allUsers.filter((user) =>
-    user.toLowerCase().includes(query.toLowerCase())
-  );
-
-  if (suggestions.length === 0) {
-    suggestionBox.style.display = "none";
-    return;
-  }
-
-  suggestions.forEach((user) => {
-    const li = document.createElement("li");
-    li.textContent = user;
-    li.style.padding = "5px";
-    li.style.cursor = "pointer";
-
-    li.addEventListener("click", () => {
-      document.getElementById("userSearchInput").value = user;
-      suggestionBox.style.display = "none";
-    });
-
-    li.addEventListener("mouseenter", () => {
-      li.style.backgroundColor = "#ddd";
-    });
-
-    li.addEventListener("mouseleave", () => {
-      li.style.backgroundColor = "white";
-    });
-
-    suggestionBox.appendChild(li);
-  });
-
-  suggestionBox.style.display = "block";
-}
-
-// 綁定 input 輸入事件
-document.getElementById("userSearchInput").addEventListener("input", (e) => {
-  showUserSuggestions(e.target.value);
-});
-
-// 存放已加入的使用者列表
-const addedUsers = [];
-
-function addUser() {
-  const input = document.getElementById("userSearchInput");
-  const username = input.value.trim();
-
-  if (username && !addedUsers.includes(username)) {
-    addedUsers.push(username);
-    updateAddedUsersList();
-    input.value = ""; // 清空輸入框
-  }
-}
-
-function updateAddedUsersList() {
-  const list = document.getElementById("addedUsers");
-  list.innerHTML = ""; // 清空現有列表
-
-  addedUsers.forEach((user, index) => {
-    const li = document.createElement("li");
-    li.textContent = user;
-
-    // 加入刪除按鈕
-    const removeBtn = document.createElement("span");
-    removeBtn.textContent = " ×";
-    removeBtn.className = "remove-user";
-    removeBtn.style.cursor = "pointer";
-    removeBtn.style.color = "red";
-    removeBtn.style.marginLeft = "8px";
-    removeBtn.setAttribute("data-index", index);
-
-    li.appendChild(removeBtn);
-    list.appendChild(li);
-  });
-}
-
-document.getElementById("addedUsers").addEventListener("click", function (e) {
-  if (e.target.classList.contains("remove-user")) {
-    const index = parseInt(e.target.getAttribute("data-index"), 10);
-    if (!isNaN(index)) {
-      addedUsers.splice(index, 1); // 從陣列中移除
-      updateAddedUsersList(); // 重新渲染畫面
-    }
-  }
-});
-
-// 初始化取得使用者清單
-fetchUserList();
 
 // 初始化頁面
 initializePage();

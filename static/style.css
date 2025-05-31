@@ -1,4 +1,3 @@
-/* === 基礎樣式 === */
 body {
   font-family: "Roboto", sans-serif;
   margin: 0;
@@ -6,15 +5,6 @@ body {
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   color: #e0e0e0;
 }
-
-h1,
-h2,
-p {
-  margin: 0;
-  padding: 0;
-}
-
-/* === Header === */
 header {
   display: flex;
   justify-content: space-between;
@@ -25,22 +15,20 @@ header {
   position: relative;
   z-index: 10;
 }
-
 h1 {
   text-align: center;
   flex-grow: 1;
+  margin: 0;
   font-size: 28px;
   text-transform: uppercase;
   letter-spacing: 2px;
   color: #00d4ff;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
 }
-
 .auth-buttons {
   display: flex;
   gap: 15px;
 }
-
 .auth-buttons button {
   background: linear-gradient(45deg, #00d4ff, #007bff);
   color: white;
@@ -52,85 +40,121 @@ h1 {
   transition: all 0.3s;
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
-
 .auth-buttons button:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
-
 .welcome-message {
   font-size: 16px;
   color: #00d4ff;
   text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
   margin-right: 15px;
 }
-
-/* === 主內容區域 === */
 .container {
   display: flex;
   height: calc(100vh - 70px);
 }
-
+nav {
+  width: 250px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  position: fixed;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+nav ul li {
+  margin-bottom: 15px;
+}
+nav ul li a {
+  color: #e0e0e0;
+  text-decoration: none;
+  font-size: 18px;
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+nav ul li a:hover {
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
 main {
   flex: 1;
   padding: 30px;
-  margin-left: 270px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
+  margin-left: 270px;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
 }
-
 main h2 {
   font-size: 32px;
   color: #00d4ff;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
-
 main p {
   font-size: 20px;
 }
-
-/* === 側邊欄導航 === */
-nav {
-  width: 250px;
-  height: calc(100vh - 70px);
-  position: fixed;
-  overflow-y: auto;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+.content-section {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
-
-nav ul {
-  list-style: none;
-  padding: 0;
-}
-
-nav ul li {
-  margin-bottom: 15px;
-}
-
-nav ul li a {
+.content-section.active {
   display: block;
-  font-size: 18px;
-  padding: 10px;
+}
+.form-container {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 30px 50px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  width: 350px;
+  text-align: center;
+  margin: 0 auto;
+}
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+label {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 5px;
   color: #e0e0e0;
-  text-decoration: none;
+}
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #00d4ff;
   border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  box-sizing: border-box;
   transition: all 0.3s;
 }
-
-nav ul li a:hover {
-  background: linear-gradient(45deg, #00d4ff, #007bff);
-  color: white;
+input:focus,
+select:focus {
+  outline: none;
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  border-color: #007bff;
 }
-
-/* === 共用按鈕 === */
+select option {
+  background: #16213e;
+  color: #e0e0e0;
+}
 button {
   width: 100%;
   padding: 12px;
@@ -143,99 +167,37 @@ button {
   transition: all 0.3s;
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
-
 button:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
-
 button:disabled {
   background: #555;
   cursor: not-allowed;
 }
-
-/* === 表單樣式 === */
-.form-container {
-  width: 350px;
-  margin: 0 auto;
-  padding: 30px 50px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-  text-align: center;
-}
-
-.form-group {
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-label {
-  display: block;
-  font-size: 16px;
-  margin-bottom: 5px;
-  color: #e0e0e0;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid #00d4ff;
-  border-radius: 5px;
-  color: #e0e0e0;
-  box-sizing: border-box;
-  transition: all 0.3s;
-}
-
-input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-}
-
-/* === 內容區塊切換 === */
-.content-section {
-  display: none;
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.content-section.active {
-  display: block;
-}
-
 .error {
   color: red;
   font-size: 14px;
   margin-top: 5px;
 }
-
 .login-link,
 .register-link {
   margin-top: 15px;
   font-size: 14px;
 }
-
 .login-link a,
 .register-link a {
   color: #00d4ff;
   text-decoration: none;
   transition: all 0.3s;
 }
-
 .login-link a:hover,
 .register-link a:hover {
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
-
-/* === 拖拉上傳區 === */
 .drop-area {
   width: 80%;
-  height: 300px;
-  margin: 60px auto 0 auto;
+  height: 250px;
   border: 2px dashed #00d4ff;
   border-radius: 10px;
   display: flex;
@@ -244,193 +206,128 @@ input:focus {
   text-align: center;
   background: rgba(0, 0, 0, 0.5);
   transition: all 0.3s;
+  margin: 0 auto;
+  position: relative;
+  top: 80px;
 }
-
 .drop-area.dragover {
   background: rgba(0, 212, 255, 0.2);
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
 }
-
 .drop-area p {
   font-size: 20px;
   color: #e0e0e0;
   text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
 }
-
 .file-list {
   margin-top: 20px;
   font-size: 16px;
   color: #e0e0e0;
 }
-
+.file-list-container {
+  margin-top: 20px;
+  font-size: 16px;
+  color: #e0e0e0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+.file-item p {
+  margin: 0;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-item button {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 14px;
+  margin-left: 10px;
+}
+.file-item .delete-button {
+  background: linear-gradient(45deg, #ff5555, #cc0000);
+}
+.file-item .delete-button:hover {
+  box-shadow: 0 0 20px rgba(255, 85, 85, 0.8);
+}
 .upload-button {
   margin-top: 60px;
   padding: 10px 20px;
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
-
-/* === 文字提示與 QR Code === */
+.upload-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+}
 .text-left-top {
-  position: static;
-  margin-left: 10%;
-  padding: 10px 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 10px;
   text-align: left;
-  font-size: 24px;
-  font-weight: bold;
-  color: #00d4ff;
-  text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
 }
-
 .qr-code {
   margin-top: 20px;
   text-align: center;
 }
-
 .qr-code img {
   max-width: 200px;
   border: 1px solid #00d4ff;
   border-radius: 5px;
 }
-
 .login-prompt {
+  font-size: 20px;
+  color: #ff5555;
+  text-align: center;
   position: absolute;
   top: 50%;
   left: 50%;
-  font-size: 20px;
-  color: #ff5555;
   transform: translate(-50%, -50%);
-  text-align: center;
 }
-
-/* === 使用者搜尋區 === */
-.search-user {
-  width: 80%;
-  margin: 30px auto 0 auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.input-container {
-  flex: 4;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.input-container input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.1);
+.algorithm-selector {
+  position: absolute;
+  top: 360px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
   border: 1px solid #00d4ff;
-  border-radius: 5px;
-  color: #e0e0e0;
 }
-
-#userSuggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background-color: white;
-  color: black;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  max-height: 150px;
-  overflow-y: auto;
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  z-index: 1000;
-}
-
-#userSuggestions li {
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-#userSuggestions li:hover {
-  background-color: #f0f0f0;
-}
-
-.search-user button {
-  flex: 1;
-  min-width: 100px;
-}
-
-/* === 已加入使用者清單 === */
-.added-users-list ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.added-users-list li {
-  position: relative;
-  background-color: #4a90e2;
-  color: white;
-  padding: 0.3rem 0.8rem;
-  padding-right: 25px;
-  border-radius: 12px;
-  font-weight: 500;
-  user-select: none;
-  white-space: nowrap;
-  cursor: default;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.2s ease;
-}
-
-.added-users-list li:hover {
-  background-color: #357abd;
-}
-
-.remove-user {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  color: #ff5555;
-  font-weight: bold;
+.algorithm-selector label {
   font-size: 16px;
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.2s ease;
-}
-
-.remove-user:hover {
-  color: #ffffff;
-}
-
-.user-container {
-  margin-left: 20px;
-}
-.added-users-container {
-  margin: 20px auto;
-  width: 80%;
-}
-
-.added-users-container h3 {
   color: #00d4ff;
-  font-size: 18px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  display: block;
   text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
 }
-.spinner {
-  margin: 10px auto;
-  width: 30px;
-  height: 30px;
-  border: 4px solid #ccc;
-  border-top-color: #1d72b8;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.algorithm-selector select {
+  width: 120px;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #00d4ff;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  transition: all 0.3s;
 }
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.algorithm-selector select:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  border-color: #007bff;
 }
