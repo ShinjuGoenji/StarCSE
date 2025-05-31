@@ -1,5 +1,5 @@
 import base64
-import datetime
+from datetime import datetime
 import hashlib
 from io import BytesIO
 import json
@@ -9,7 +9,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from typing import List
-import shutil
 import os
 from sqlalchemy import Tuple, select
 from sqlalchemy.ext.asyncio import AsyncSession
