@@ -239,7 +239,9 @@ async def encrypt_files(
                 f.write(sub_zip_buffer.getvalue())
 
             sub_file_name = (
-                "{" + "+".join([original_file for original_file in files]) + "}"
+                "{"
+                + "+".join([original_file.filename for original_file in files])
+                + "}"
             )
             new_file_name = (
                 f"{username}-{datetime.now().isoformat()}-{sub_file_name}.zip"
