@@ -245,14 +245,14 @@ button:disabled {
   left: 10%;
   font-size: 16px;
   color: #e0e0e0;
-  width: 30%; /* Adjust width as needed */
+  width: 30%;
 }
 
 .file-list p {
   font-size: 12px;
-  white-space: nowrap; /* Prevents the text from wrapping */
-  overflow: hidden; /* Hides the overflow */
-  text-overflow: ellipsis; /* Adds the "..." when text is too long */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .file-item button {
@@ -268,7 +268,28 @@ button:disabled {
   box-shadow: 0 0 20px rgba(255, 85, 85, 0.8);
 }
 .encrypt-button {
-  position: absolute; /* Changed to fixed so it's always at the bottom */
+  position: absolute;
+  top: 570px;
+  margin-top: 60px;
+  padding: 10px 20px;
+  left: 10%;
+  width: 39%;
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.decrypt-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+}
+.decrypt-button {
+  position: absolute;
   top: 570px;
   margin-top: 60px;
   padding: 10px 20px;
@@ -289,7 +310,7 @@ button:disabled {
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
 .upload-button {
-  position: absolute; /* Changed to fixed so it's always at the bottom */
+  position: absolute;
   top: 570px;
   margin-top: 60px;
   padding: 10px 20px;
@@ -366,7 +387,7 @@ button:disabled {
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
   border-color: #007bff;
 }
-/* === 使用者搜尋區 === */
+
 .search-user {
   width: 80%;
   margin: 30px auto 0 auto;
@@ -424,7 +445,6 @@ button:disabled {
   min-width: 100px;
 }
 
-/* === 已加入使用者清單 === */
 .added-users-list ul {
   display: flex;
   flex-wrap: wrap;

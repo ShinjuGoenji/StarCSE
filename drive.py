@@ -50,7 +50,7 @@ async def download_file(file_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="File not found")
 
     # Path to the file storage (Assuming the files are stored in a directory called 'uploads')
-    file_path = os.path.join("uploads", file.file_dir, file.file_name)
+    file_path = os.path.join(file.file_dir)
 
     # Check if file exists
     if not os.path.exists(file_path):
@@ -76,10 +76,12 @@ async def delete_file(file_id: int, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
     # Path to the file storage (Assuming the files are stored in a directory called 'uploads')
-    file_path = os.path.join("uploads", file.file_dir, file.file_name)
+    file_path = os.path.join(file.file_dir)
 
     # Delete the actual file from the storage
     if os.path.exists(file_path):
         os.remove(file_path)
+    else:
+        raise HTTPException(status_code=404, detail="File deletion failed")
 
     return {"message": "File deleted successfully"}
