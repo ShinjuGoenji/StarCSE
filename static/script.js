@@ -131,26 +131,25 @@ function fetchFileList() {
 
 // Function to download the file
 function downloadFile(fileId) {
-  const formData = new FormData();
-  formData.append("file_id", fileId);
-
-  fetch(`${backendUrl}/api/files/download`, {
-    method: "GET",
-    body: formData,
+  fetch(`${backendUrl}/api/files/download?file_id=${fileId}`, {
+    method: "GET", // GET 不允許有 body
   })
     .then((response) => {
       if (!response.ok) {
-        const errorData = response.json();
-        throw new Error(errorData.detail || "Failed to download file");
+        return response.json().then((errorData) => {
+          console.error("Backend error:", errorData);
+          throw new Error(errorData.detail || "Failed to download file");
+        });
       }
       return response.blob();
     })
     .then((blob) => {
-      // Create a link element to trigger the download
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `file_${fileId}`; // Or use the file's original name
+      a.download = `file_${fileId}`; // 可改成真正的 file name
+      document.body.appendChild(a);
       a.click();
+      a.remove();
     })
     .catch((error) => {
       console.error("Error:", error);

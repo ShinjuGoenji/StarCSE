@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, File, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, File, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -40,7 +40,7 @@ async def fetch_file_list(data: dict, db: AsyncSession = Depends(get_db)):
 
 # Download file by ID
 @router.get("/api/files/download")
-async def download_file(file_id: int = Form(...), db: AsyncSession = Depends(get_db)):
+async def download_file(file_id: int = Query(...), db: AsyncSession = Depends(get_db)):
 
     # Get the file details from the database
     stmt = select(Files).filter(Files.id == file_id)
