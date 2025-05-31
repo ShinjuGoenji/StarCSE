@@ -131,12 +131,12 @@ function fetchFileList() {
 
 // Function to download the file
 function downloadFile(fileId) {
+  const formData = new FormData();
+  formData.append("file_id", fileId);
+
   fetch(`${backendUrl}/api/files/download`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ fileId }),
+    body: formData,
   })
     .then((response) => {
       if (!response.ok) {
@@ -163,13 +163,12 @@ function deleteFile(fileId) {
   if (!confirm("Are you sure you want to delete this file?")) {
     return;
   }
+  const formData = new FormData();
+  formData.append("file_id", fileId);
 
   fetch(`${backendUrl}/api/files/delete`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ fileId }),
+    body: formData,
   })
     .then((response) => {
       if (!response.ok) {
