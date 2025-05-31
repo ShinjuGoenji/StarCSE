@@ -346,7 +346,7 @@ decryptButton.addEventListener("click", () => {
   }
 
   if (decryptFilesToUpload.length !== 1) {
-    alert("請上傳一個要解密的檔案。");
+    alert("請上傳一個要解密的檔案。 len=${decryptFilesToUpload.length}");
     return;
   }
 
