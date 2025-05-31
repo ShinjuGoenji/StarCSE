@@ -130,41 +130,52 @@ function fetchFileList() {
 }
 
 // Function to download the file
-function downloadFile(fileId) {
-  fetch(`${backendUrl}/api/files/download?file_id=${fileId}`, {
-    method: "GET",
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to download file");
-      }
+async function downloadFile(fileId) {
+  try {
+    // Step 1: 下載加密檔案
+    const response = await fetch(
+      `${backendUrl}/api/files/download?file_id=${fileId}`
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to download file");
+    }
 
-      const disposition = response.headers.get("Content-Disposition");
-      let filename = `file_${fileId}`;
+    // Step 2: 取得 blob
+    const encryptedBlob = await response.blob();
 
-      if (disposition && disposition.includes("filename=")) {
-        const match = disposition.match(/filename="?([^"]+)"?/);
-        if (match?.[1]) {
-          filename = match[1];
-        }
-      }
+    // Step 3: 準備 FormData 發送到 /api/decrypt
+    const formData = new FormData();
+    formData.append("file", new File([encryptedBlob], "blob.zip"));
+    formData.append("username", currentUser); // 你目前登入的使用者
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    })
-    .catch((error) => {
-      console.error("Download error:", error);
-      alert(`Failed to download file. Reason: ${error.message}`);
+    const decryptResponse = await fetch(`${backendUrl}/api/decrypt`, {
+      method: "POST",
+      body: formData,
     });
+
+    if (!decryptResponse.ok) {
+      const errorData = await decryptResponse.json();
+      throw new Error(errorData.detail);
+    }
+
+    const decryptedBlob = await decryptResponse.blob();
+
+    // Step 5: 下載解密後的檔案 (仍是 zip)
+    const url = window.URL.createObjectURL(decryptedBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "decrypted_file.zip";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    alert("File decrypted and downloaded successfully!");
+  } catch (error) {
+    console.error("Error:", error);
+    alert(`解密下載失敗：${error.message}`);
+  }
 }
 
 // Function to delete the file

@@ -238,20 +238,24 @@ async def encrypt_files(
             with open(zip_path, "wb") as f:
                 f.write(sub_zip_buffer.getvalue())
 
-            # Insert row(s) into Files table (one for each original file)
-            for original_file in files:
-                new_file = Files(file_name=original_file.filename, file_dir=zip_path)
-                db.add(new_file)
-                await db.flush()  # Get new_file.id without full commit
+            sub_file_name = (
+                "{" + "+".join([original_file for original_file in files]) + "}"
+            )
+            new_file_name = (
+                f"{username}-{datetime.now().isoformat()}-{sub_file_name}.zip"
+            )
+            new_file = Files(file_name=new_file_name, file_dir=zip_path)
+            db.add(new_file)
+            await db.flush()  # Get new_file.id without full commit
 
-                # Get recipient's User.id
-                user_result = await db.execute(
-                    select(User).where(User.username == recipient)
-                )
-                user = user_result.scalar_one_or_none()
-                if user:
-                    relation = UserFiles(user_id=user.id, file_id=new_file.id)
-                    db.add(relation)
+            # Get recipient's User.id
+            user_result = await db.execute(
+                select(User).where(User.username == recipient)
+            )
+            user = user_result.scalar_one_or_none()
+            if user:
+                relation = UserFiles(user_id=user.id, file_id=new_file.id)
+                db.add(relation)
 
         await db.commit()
         return {"message": "Files encrypted and uploaded successfully."}
