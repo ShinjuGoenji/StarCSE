@@ -202,7 +202,9 @@ async def encrypt_files(
         user_sk=user_sk, encrypted_files=encrypted_files
     )
 
-    user_pk_pem = user_pk.public_bytes(
+    user_pk_pem = serialization.load_der_public_key(
+        user_pk, backend=default_backend()
+    ).public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
