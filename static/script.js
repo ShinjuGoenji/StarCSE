@@ -451,7 +451,7 @@ registerForm.addEventListener("submit", async function (event) {
   }
 });
 
-let allUsers = []
+let allUsers = [];
 
 // 頁面載入時取得所有使用者
 async function fetchUserList() {
@@ -561,6 +561,6 @@ document.getElementById("addedUsers").addEventListener("click", function (e) {
 
 // 初始化取得使用者清單
 fetchUserList();
-Add comment
+
 // 初始化頁面
 initializePage();
