@@ -154,7 +154,7 @@ function downloadFile(fileId) {
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("Failed to download file. Please try again.");
+      alert(`Failed to download file. Reason: ${error.message}`);
     });
 }
 
