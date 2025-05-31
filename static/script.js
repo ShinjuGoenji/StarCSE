@@ -1,14 +1,17 @@
 const backendUrl = "https://starcse.onrender.com";
 // const backendUrl = 'https://d18d-140-113-212-14.ngrok-free.app/'
 
+// 檢查登入狀態
 let isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 let currentUser = localStorage.getItem("username") || "";
 
+// 初始化頁面
 function initializePage() {
   updateHeader();
   updateSections();
 }
 
+// 更新右上角顯示
 function updateHeader() {
   const authButtons = document.getElementById("authButtons");
   const userInfo = document.getElementById("userInfo");
@@ -24,6 +27,7 @@ function updateHeader() {
   }
 }
 
+// 控制 Encrypt 和 Decrypt 區塊的顯示
 function updateSections() {
   const encryptContent = document.getElementById("encryptContent");
   const encryptLoginPrompt = document.getElementById("encryptLoginPrompt");
@@ -51,6 +55,7 @@ function updateSections() {
   }
 }
 
+// 切換頁面
 function showSection(sectionId) {
   const sections = document.querySelectorAll(".content-section");
   sections.forEach((section) => {
@@ -67,6 +72,7 @@ function showSection(sectionId) {
   }
 }
 
+// 獲取加密檔案清單
 function fetchFileList() {
   if (!isLoggedIn) {
     alert("Please login first!");
@@ -118,6 +124,7 @@ function fetchFileList() {
     });
 }
 
+// 下載檔案
 function downloadFile(filename) {
   if (!isLoggedIn) {
     alert("Please login first!");
@@ -152,6 +159,7 @@ function downloadFile(filename) {
     });
 }
 
+// 刪除檔案
 function deleteFile(filename) {
   if (!isLoggedIn) {
     alert("Please login first!");
@@ -178,6 +186,7 @@ function deleteFile(filename) {
   }
 }
 
+// 登出功能
 function logout() {
   if (confirm("Are you sure you want to logout?")) {
     localStorage.removeItem("isLoggedIn");
@@ -442,5 +451,116 @@ registerForm.addEventListener("submit", async function (event) {
   }
 });
 
+let allUsers = []
+
+// 頁面載入時取得所有使用者
+async function fetchUserList() {
+  try {
+    const response = await fetch(`${backendUrl}/api/users`);
+    if (!response.ok) throw new Error("取得使用者清單失敗");
+    allUsers = await response.json(); // ["user1", "user2", ...]
+  } catch (error) {
+    console.error("Error fetching user list:", error);
+  }
+}
+
+// 顯示符合搜尋條件的提示名單
+function showUserSuggestions(query) {
+  const suggestionBox = document.getElementById("userSuggestions");
+  suggestionBox.innerHTML = "";
+
+  if (!query) {
+    suggestionBox.style.display = "none";
+    return;
+  }
+
+  const suggestions = allUsers.filter((user) =>
+    user.toLowerCase().includes(query.toLowerCase())
+  );
+
+  if (suggestions.length === 0) {
+    suggestionBox.style.display = "none";
+    return;
+  }
+
+  suggestions.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user;
+    li.style.padding = "5px";
+    li.style.cursor = "pointer";
+
+    li.addEventListener("click", () => {
+      document.getElementById("userSearchInput").value = user;
+      suggestionBox.style.display = "none";
+    });
+
+    li.addEventListener("mouseenter", () => {
+      li.style.backgroundColor = "#ddd";
+    });
+
+    li.addEventListener("mouseleave", () => {
+      li.style.backgroundColor = "white";
+    });
+
+    suggestionBox.appendChild(li);
+  });
+
+  suggestionBox.style.display = "block";
+}
+
+// 綁定 input 輸入事件
+document.getElementById("userSearchInput").addEventListener("input", (e) => {
+  showUserSuggestions(e.target.value);
+});
+
+// 存放已加入的使用者列表
+const addedUsers = [];
+
+function addUser() {
+  const input = document.getElementById("userSearchInput");
+  const username = input.value.trim();
+
+  if (username && !addedUsers.includes(username)) {
+    addedUsers.push(username);
+    updateAddedUsersList();
+    input.value = ""; // 清空輸入框
+  }
+}
+
+function updateAddedUsersList() {
+  const list = document.getElementById("addedUsers");
+  list.innerHTML = ""; // 清空現有列表
+
+  addedUsers.forEach((user, index) => {
+    const li = document.createElement("li");
+    li.textContent = user;
+
+    // 加入刪除按鈕
+    const removeBtn = document.createElement("span");
+    removeBtn.textContent = " ×";
+    removeBtn.className = "remove-user";
+    removeBtn.style.cursor = "pointer";
+    removeBtn.style.color = "red";
+    removeBtn.style.marginLeft = "8px";
+    removeBtn.setAttribute("data-index", index);
+
+    li.appendChild(removeBtn);
+    list.appendChild(li);
+  });
+}
+
+document.getElementById("addedUsers").addEventListener("click", function (e) {
+  if (e.target.classList.contains("remove-user")) {
+    const index = parseInt(e.target.getAttribute("data-index"), 10);
+    if (!isNaN(index)) {
+      addedUsers.splice(index, 1); // 從陣列中移除
+      updateAddedUsersList(); // 重新渲染畫面
+    }
+  }
+});
+
+// 初始化取得使用者清單
+fetchUserList();
+Add comment
 // 初始化頁面
 initializePage();
