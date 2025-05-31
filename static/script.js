@@ -131,8 +131,12 @@ function fetchFileList() {
 
 // Function to download the file
 function downloadFile(fileId) {
-  fetch(`${backendUrl}/api/files/${fileId}/download`, {
+  fetch(`${backendUrl}/api/files/download`, {
     method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ fileId }),
   })
     .then((response) => {
       if (!response.ok) {
@@ -160,8 +164,12 @@ function deleteFile(fileId) {
     return;
   }
 
-  fetch(`${backendUrl}/api/files/${fileId}/delete`, {
+  fetch(`${backendUrl}/api/files/delete`, {
     method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ fileId }),
   })
     .then((response) => {
       if (!response.ok) {
@@ -341,7 +349,7 @@ decryptDropArea.addEventListener("drop", (e) => {
   e.preventDefault();
   decryptDropArea.classList.remove("dragover");
   const files = e.dataTransfer.files;
-  handleFiles(files, decryptFileList, decryptButton, "decrypt");
+  handleFiles(files, decryptFileList, decryptButton, decryptButton, "decrypt");
 });
 
 decryptButton.addEventListener("click", () => {

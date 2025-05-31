@@ -39,8 +39,10 @@ async def fetch_file_list(data: dict, db: AsyncSession = Depends(get_db)):
 
 
 # Download file by ID
-@router.get("/api/files/{file_id}/download")
-async def download_file(file_id: int, db: AsyncSession = Depends(get_db)):
+@router.get("/api/files/download")
+async def download_file(data: dict, db: AsyncSession = Depends(get_db)):
+    file_id = data.get("fileId")
+
     # Get the file details from the database
     stmt = select(Files).filter(Files.id == file_id)
     result = await db.execute(stmt)
@@ -61,8 +63,10 @@ async def download_file(file_id: int, db: AsyncSession = Depends(get_db)):
 
 
 # Delete file by ID
-@router.delete("/api/files/{file_id}/delete")
-async def delete_file(file_id: int, db: AsyncSession = Depends(get_db)):
+@router.delete("/api/files/delete")
+async def delete_file(data: dict, db: AsyncSession = Depends(get_db)):
+    file_id = data.get("fileId")
+
     # Get the file details from the database
     stmt = select(Files).filter(Files.id == file_id)
     result = await db.execute(stmt)
