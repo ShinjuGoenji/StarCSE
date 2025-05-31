@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Table, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, relationship
@@ -13,6 +13,14 @@ Base = declarative_base()
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
+user_files = Table(
+    "user_files",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("file_id", Integer, ForeignKey("files.id"), primary_key=True),
+)
+
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -24,7 +32,7 @@ class User(Base):
     user_pk = Column(String, nullable=True)
 
     # 用戶和檔案之間的關聯
-    files = relationship("Files", secondary="user_files", back_populates="users")
+    files = relationship("Files", secondary=user_files, back_populates="users")
 
 
 class Files(Base):
@@ -34,17 +42,7 @@ class Files(Base):
     file_dir = Column(String, nullable=False)
 
     # 檔案和用戶之間的關聯
-    users = relationship("User", secondary="user_files", back_populates="files")
-
-
-class UserFiles(Base):
-    __tablename__ = "user_files"
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    file_id = Column(Integer, ForeignKey("files.id"), primary_key=True)
-
-    # 關聯表不需要再額外定義其他欄位
-    user = relationship(User, backref="user_files")
-    file = relationship(Files, backref="user_files")
+    users = relationship("User", secondary=user_files, back_populates="files")
 
 
 async def get_db():
