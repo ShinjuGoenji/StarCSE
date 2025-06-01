@@ -90,7 +90,7 @@ function fetchFileList() {
     .then((response) => {
       if (!response.ok) {
         const errorData = response.json();
-        throw new Error(errorData.detail || "Failed to fetch file list");
+        throw new Error(errorData.detail);
       }
       return response.json();
     })
@@ -325,7 +325,7 @@ uploadButton.addEventListener("click", () => {
 
   if (confirm("Are you sure you want to encrypt these files?")) {
     const formData = new FormData();
-
+    formData.append("algorithm", "AES"); //for test
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
