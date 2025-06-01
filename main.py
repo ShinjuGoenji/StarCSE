@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
 from models import Base, Files, UserFiles, engine
 from auth import router as auth_router
+from drive import router as drive_router
 
 
 import kms
@@ -51,6 +52,7 @@ os.makedirs(DECRYPT_FOLDER, exist_ok=True)
 
 # Register auth router
 app.include_router(auth_router)
+app.include_router(drive_router)
 
 
 # Create tables
