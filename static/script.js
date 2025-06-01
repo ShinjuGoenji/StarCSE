@@ -88,8 +88,10 @@ function fetchFileList() {
     body: JSON.stringify({ currentUser }),
   })
     .then((response) => {
-      if (!response.ok)
+      if (!response.ok) {
+        const errorData = response.json();
         throw new Error(errorData.detail || "Failed to fetch file list");
+      }
       return response.json();
     })
     .then((data) => {
