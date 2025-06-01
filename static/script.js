@@ -88,7 +88,8 @@ function fetchFileList() {
     body: JSON.stringify({ currentUser }),
   })
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch file list");
+      if (!response.ok)
+        throw new Error(errorData.detail || "Failed to fetch file list");
       return response.json();
     })
     .then((data) => {
