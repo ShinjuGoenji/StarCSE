@@ -88,10 +88,7 @@ function fetchFileList() {
     body: JSON.stringify({ currentUser }),
   })
     .then((response) => {
-      if (!response.ok) {
-        const errorData = response.json();
-        throw new Error(errorData.detail);
-      }
+      if (!response.ok) throw new Error("Failed to fetch file list");
       return response.json();
     })
     .then((data) => {
@@ -128,7 +125,7 @@ function fetchFileList() {
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert(`Failed to fetch file list. Please try again. ${error.message}`);
+      alert("Failed to fetch file list. Please try again.");
     });
 }
 
@@ -203,7 +200,7 @@ function deleteFile(fileId) {
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert(`Failed to delete file. Please try again. ${error.message}`);
+      alert("Failed to delete file. Please try again.");
     });
 }
 
@@ -280,7 +277,7 @@ encryptButton.addEventListener("click", () => {
 
   if (confirm("Are you sure you want to encrypt these files?")) {
     const formData = new FormData();
-    formData.append("algorithm", "AES"); //for test
+
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
@@ -311,7 +308,7 @@ encryptButton.addEventListener("click", () => {
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert(`Encryption failed. Please try again. ${error.message}`);
+        alert("Encryption failed. Please try again.");
       });
   }
 });
@@ -325,7 +322,7 @@ uploadButton.addEventListener("click", () => {
 
   if (confirm("Are you sure you want to encrypt these files?")) {
     const formData = new FormData();
-    formData.append("algorithm", "AES"); //for test
+
     filesToUpload.forEach((file) => {
       formData.append("files", file);
     });
