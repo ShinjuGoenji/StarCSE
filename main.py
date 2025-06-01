@@ -1,4 +1,4 @@
-import base64More
+import base64
 from datetime import datetime
 import hashlib
 from io import BytesIO
