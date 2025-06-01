@@ -200,7 +200,7 @@ function deleteFile(fileId) {
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("Failed to delete file. Please try again.");
+      alert(`Failed to delete file. Please try again. ${error.message}`);
     });
 }
 
