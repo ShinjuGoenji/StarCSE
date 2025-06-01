@@ -308,7 +308,7 @@ encryptButton.addEventListener("click", () => {
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Encryption failed. Please try again.");
+        alert(`Encryption failed. Please try again. ${error.message}`);
       });
   }
 });
