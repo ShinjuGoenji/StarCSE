@@ -125,7 +125,7 @@ function fetchFileList() {
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("Failed to fetch file list. Please try again.");
+      alert(`Failed to fetch file list. Please try again. ${error.message}`);
     });
 }
 
