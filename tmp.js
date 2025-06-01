@@ -1,4 +1,4 @@
-const backendUrl = "https://starcse.onrender.com";
+const backendUrl = "https://cse-l1zs.onrender.com";
 // const backendUrl = 'https://d18d-140-113-212-14.ngrok-free.app/'
 
 // 檢查登入狀態
@@ -33,25 +33,17 @@ function updateSections() {
   const encryptLoginPrompt = document.getElementById("encryptLoginPrompt");
   const decryptContent = document.getElementById("decryptContent");
   const decryptLoginPrompt = document.getElementById("decryptLoginPrompt");
-  const checkFilesContent = document.getElementById("checkFilesContent");
-  const checkFilesLoginPrompt = document.getElementById(
-    "checkFilesLoginPrompt"
-  );
 
   if (isLoggedIn) {
     encryptContent.style.display = "block";
     encryptLoginPrompt.style.display = "none";
     decryptContent.style.display = "block";
     decryptLoginPrompt.style.display = "none";
-    checkFilesContent.style.display = "block";
-    checkFilesLoginPrompt.style.display = "none";
   } else {
     encryptContent.style.display = "none";
     encryptLoginPrompt.style.display = "block";
     decryptContent.style.display = "none";
     decryptLoginPrompt.style.display = "block";
-    checkFilesContent.style.display = "none";
-    checkFilesLoginPrompt.style.display = "block";
   }
 }
 
@@ -64,167 +56,29 @@ function showSection(sectionId) {
   const section = document.getElementById(sectionId);
   if (section) {
     section.classList.add("active");
-    if (sectionId === "check-files" && isLoggedIn) {
-      fetchFileList();
-    }
   } else {
     console.error(`Section with ID '${sectionId}' not found.`);
   }
 }
 
-// 獲取加密檔案清單
-function fetchFileList() {
-  if (!isLoggedIn) {
-    alert("Please login first!");
-    showSection("login");
-    return;
-  }
-
-  fetch(`${backendUrl}/api/files`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ currentUser }),
-  })
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch file list");
-      return response.json();
-    })
-    .then((data) => {
-      const fileListContainer = document.getElementById("fileListContainer");
-      fileListContainer.innerHTML = "";
-
-      if (data.files.length === 0) {
-        const p = document.createElement("p");
-        p.textContent = "No files found.";
-        fileListContainer.appendChild(p);
-      } else {
-        data.files.forEach((file) => {
-          const div = document.createElement("div");
-          div.className = "file-item";
-
-          const p = document.createElement("p");
-          p.textContent = file.name;
-
-          const downloadButton = document.createElement("button");
-          downloadButton.textContent = "Download";
-          downloadButton.onclick = () => downloadFile(file.id); // Update to use file ID for download
-
-          const deleteButton = document.createElement("button");
-          deleteButton.textContent = "Delete";
-          deleteButton.className = "delete-button";
-          deleteButton.onclick = () => deleteFile(file.id); // Update to use file ID for deletion
-
-          div.appendChild(p);
-          div.appendChild(downloadButton);
-          div.appendChild(deleteButton);
-          fileListContainer.appendChild(div);
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      alert("Failed to fetch file list. Please try again.");
-    });
-}
-
-// Function to download the file
-async function downloadFile(fileId) {
-  try {
-    // Step 1: 下載加密檔案
-    const response = await fetch(
-      `${backendUrl}/api/files/download?file_id=${fileId}`
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to download file");
-    }
-
-    // Step 2: 取得 blob
-    const encryptedBlob = await response.blob();
-
-    // Step 3: 準備 FormData 發送到 /api/decrypt
-    const formData = new FormData();
-    formData.append("file", new File([encryptedBlob], "blob.zip"));
-    formData.append("username", currentUser); // 你目前登入的使用者
-
-    const decryptResponse = await fetch(`${backendUrl}/api/decrypt`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!decryptResponse.ok) {
-      const errorData = await decryptResponse.json();
-      throw new Error(errorData.detail);
-    }
-
-    const decryptedBlob = await decryptResponse.blob();
-
-    // Step 5: 下載解密後的檔案 (仍是 zip)
-    const url = window.URL.createObjectURL(decryptedBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "decrypted_file.zip";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-
-    alert("File decrypted and downloaded successfully!");
-  } catch (error) {
-    console.error("Error:", error);
-    alert(`解密下載失敗：${error.message}`);
-  }
-}
-
-// Function to delete the file
-function deleteFile(fileId) {
-  if (!confirm("Are you sure you want to delete this file?")) {
-    return;
-  }
-  const formData = new FormData();
-  formData.append("file_id", fileId);
-
-  fetch(`${backendUrl}/api/files/delete`, {
-    method: "DELETE",
-    body: formData,
-  })
-    .then((response) => {
-      if (!response.ok) {
-        const errorData = response.json();
-        throw new Error(errorData.detail || "Failed to delete file");
-      }
-      alert("File deleted successfully!");
-      fetchFileList(); // Refresh the file list after deletion
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      alert("Failed to delete file. Please try again.");
-    });
-}
-
 // 登出功能
 function logout() {
-  if (confirm("Are you sure you want to logout?")) {
+  if (confirm("確定要登出嗎？")) {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("username");
-    localStorage.removeItem("token");
     isLoggedIn = false;
     currentUser = "";
     updateHeader();
     updateSections();
     showSection("login");
-    alert("Logged out successfully!");
+    alert("已成功登出！");
   }
 }
 
 // Encrypt Section Logic
 const dropArea = document.getElementById("dropArea");
 const fileList = document.getElementById("fileList");
-const encryptButton = document.getElementById("encryptButton");
 const uploadButton = document.getElementById("uploadButton");
-const algorithmSelect = document.getElementById("algorithmSelect");
 let filesToUpload = [];
 
 dropArea.addEventListener("dragover", (e) => {
@@ -240,16 +94,10 @@ dropArea.addEventListener("drop", (e) => {
   e.preventDefault();
   dropArea.classList.remove("dragover");
   const files = e.dataTransfer.files;
-  handleFiles(files, fileList, encryptButton, uploadButton, "encrypt");
+  handleFiles(files, fileList, uploadButton, "encrypt");
 });
 
-function handleFiles(
-  files,
-  fileListElement,
-  buttonElement1,
-  buttonElement2,
-  section
-) {
+function handleFiles(files, fileListElement, buttonElement, section) {
   const filesArray = Array.from(files);
   fileListElement.innerHTML = "";
   filesArray.forEach((file) => {
@@ -258,8 +106,7 @@ function handleFiles(
     fileListElement.appendChild(p);
   });
   if (filesArray.length > 0) {
-    buttonElement1.style.display = "block";
-    buttonElement2.style.display = "block";
+    buttonElement.style.display = "block";
   }
   if (section === "encrypt") {
     filesToUpload = filesArray;
@@ -268,9 +115,12 @@ function handleFiles(
   }
 }
 
-encryptButton.addEventListener("click", () => {
+const encryptLoading = document.getElementById("encryptLoading");
+const decryptLoading = document.getElementById("decryptLoading");
+
+uploadButton.addEventListener("click", () => {
   if (!isLoggedIn) {
-    alert("Please login first!");
+    alert("請先登入！");
     showSection("login");
     return;
   }
@@ -283,7 +133,6 @@ encryptButton.addEventListener("click", () => {
     });
 
     formData.append("username", currentUser);
-    formData.append("isUpload", false);
     formData.append("recipients", JSON.stringify(addedUsers));
     fetch(`${backendUrl}/api/encrypt`, {
       method: "POST",
@@ -302,43 +151,6 @@ encryptButton.addEventListener("click", () => {
         URL.revokeObjectURL(url);
         alert("Files encrypted and downloaded successfully!");
         fileList.innerHTML = "";
-        encryptButton.style.display = "none";
-        uploadButton.style.display = "none";
-        filesToUpload = [];
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("Encryption failed. Please try again.");
-      });
-  }
-});
-
-uploadButton.addEventListener("click", () => {
-  if (!isLoggedIn) {
-    alert("Please login first!");
-    showSection("login");
-    return;
-  }
-
-  if (confirm("Are you sure you want to encrypt these files?")) {
-    const formData = new FormData();
-
-    filesToUpload.forEach((file) => {
-      formData.append("files", file);
-    });
-
-    formData.append("username", currentUser);
-    formData.append("isUpload", true);
-    formData.append("recipients", JSON.stringify(addedUsers));
-    fetch(`${backendUrl}/api/encrypt`, {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Encryption failed");
-        alert("Files encrypted and uploaded successfully!");
-        fileList.innerHTML = "";
-        encryptButton.style.display = "none";
         uploadButton.style.display = "none";
         filesToUpload = [];
       })
@@ -368,26 +180,25 @@ decryptDropArea.addEventListener("drop", (e) => {
   e.preventDefault();
   decryptDropArea.classList.remove("dragover");
   const files = e.dataTransfer.files;
-  handleFiles(files, decryptFileList, decryptButton, decryptButton, "decrypt");
+  handleFiles(files, decryptFileList, decryptButton, "decrypt");
 });
 
 decryptButton.addEventListener("click", () => {
   if (!isLoggedIn) {
-    alert("Please login first!");
+    alert("請先登入！");
     showSection("login");
     return;
   }
 
   if (decryptFilesToUpload.length !== 1) {
-    alert(`請上傳一個要解密的檔案。 len=${decryptFilesToUpload.length}`);
+    alert("請上傳一個要解密的檔案。");
     return;
   }
 
   if (confirm("Are you sure you want to decrypt this file?")) {
     const formData = new FormData();
-    formData.append("file", decryptFilesToUpload[0]);
+    formData.append("file", decryptFilesToUpload[0]); // ⬅️ 改為單一檔案欄位
     formData.append("username", currentUser);
-
     fetch(`${backendUrl}/api/decrypt`, {
       method: "POST",
       body: formData,
@@ -440,10 +251,10 @@ document
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.detail || data.message || "Login failed 253");
       }
 
-      localStorage.setItem("token", data.token);
+      // 登入成功，儲存狀態
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("username", username);
       isLoggedIn = true;
@@ -456,7 +267,7 @@ document
       showSection("home");
     } catch (error) {
       loginError.textContent = error.message;
-      console.error("Error:", error);
+      console.error("269 Error:", error);
     }
   });
 
@@ -519,7 +330,7 @@ registerForm.addEventListener("submit", async function (event) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Registration failed");
+      throw new Error(data.detail || data.message || "Registration failed");
     }
 
     qrCodeImg.src = data.qrCodeUrl;
