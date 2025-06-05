@@ -192,6 +192,220 @@ async def aes_encrypt_files(
         )
 
 
+# async def aes_turbo_encrypt_files(
+#     username: str,
+#     recipients: str,  # JSON 字串形式的使用者名稱清單
+#     files: List[UploadFile],
+#     db: AsyncSession,
+#     isUpload: bool,
+# ):
+#     if not files:
+#         raise HTTPException(status_code=400, detail="No files uploaded")
+
+#     recipient_list = json.loads(recipients)
+#     all_recipients = [username] + recipient_list  # 包含自己
+
+#     # 1. 產生 AES 金鑰
+#     AES_key: bytes = kms.generate_AES_key()
+
+#     # 2. 加密檔案
+#     encrypted_files: List[dict] = await AES_RSA.encrypt_files_with_AES_turbo(
+#         files=files, AES_key=AES_key
+#     )
+#     # dict 結構: {"filename": "file.txt", "content": b"...encrypted..."}
+
+#     # 3. 取得簽名用的金鑰與產生cert
+#     user_pk, user_sk = await AES_RSA.get_user_keys(username=username, db=db)
+#     signatures: List[dict] = AES_RSA.sign_encrypted_files(
+#         user_sk=user_sk, encrypted_files=encrypted_files
+#     )
+#     try:
+#         cert = certificate.gencsr(user_sk, user_pk, b"FPGA")
+#     except Exception as e:
+#         import traceback
+
+#         print("[/api/encrypt] Encryption failed:", e)
+#         traceback.print_exc()
+#         raise HTTPException(status_code=500, detail=str(e))
+
+#     # dict 結構: {"filename": ..., "signature": ...}
+
+#     # 4. 為每位共享者建立一份獨立的 ZIP 包（含專屬的 AES key 加密）
+#     if isUpload:
+#         for recipient in all_recipients:
+#             # Encrypt AES key for this recipient
+#             recipient_pk, _ = await AES_RSA.get_user_keys(username=recipient, db=db)
+#             enc_AES_key = AES_RSA.encrypt_AES_key(AES_key, recipient_pk)
+
+#             # Create sub-zip per recipient
+#             sub_zip_buffer = BytesIO()
+#             with zipfile.ZipFile(sub_zip_buffer, "w", zipfile.ZIP_DEFLATED) as sub_zip:
+#                 for file in encrypted_files:
+#                     sub_zip.writestr(file["filename"], file["content"])
+#                     sub_zip.writestr(file["iv_filename"], file["iv_content"])
+#                 sub_zip.writestr("signatures.json", json.dumps(signatures, indent=2))
+#                 sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
+#                 sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+
+#             # Generate hashed filename
+#             hash_input = f"{username}-{datetime.now().isoformat()}-{recipient}.zip"
+#             hash_filename = hashlib.sha256(hash_input.encode()).hexdigest() + ".zip"
+
+#             # Store to upload/recipient/
+#             recipient_dir = os.path.join("upload", recipient)
+#             os.makedirs(recipient_dir, exist_ok=True)
+#             zip_path = os.path.join(recipient_dir, hash_filename)
+
+#             # Write zip to file
+#             with open(zip_path, "wb") as f:
+#                 f.write(sub_zip_buffer.getvalue())
+
+#             sub_file_name = (
+#                 "{"
+#                 + "+".join([original_file.filename for original_file in files])
+#                 + "}"
+#             )
+#             new_file_name = (
+#                 f"{username}-{datetime.now().isoformat()}-{sub_file_name}.zip"
+#             )
+#             new_file = Files(file_name=new_file_name, file_dir=zip_path)
+#             db.add(new_file)
+#             await db.flush()  # Get new_file.id without full commit
+
+#             # Get recipient's User.id
+#             user_result = await db.execute(
+#                 select(User).where(User.username == recipient)
+#             )
+#             user = user_result.scalar_one_or_none()
+#             if user:
+#                 relation = UserFiles(user_id=user.id, file_id=new_file.id)
+#                 db.add(relation)
+
+#         await db.commit()
+#         return {"message": "Files encrypted and uploaded successfully."}
+#     else:
+#         outer_zip_buffer = BytesIO()
+#         with zipfile.ZipFile(outer_zip_buffer, "w", zipfile.ZIP_DEFLATED) as outer_zip:
+#             for recipient in all_recipients:
+#                 recipient_pk, _ = await AES_RSA.get_user_keys(username=recipient, db=db)
+#                 enc_AES_key = AES_RSA.encrypt_AES_key(AES_key, recipient_pk)
+
+#                 # 建立該 recipient 的子 ZIP
+#                 sub_zip_buffer = BytesIO()
+#                 with zipfile.ZipFile(
+#                     sub_zip_buffer, "w", zipfile.ZIP_DEFLATED
+#                 ) as sub_zip:
+#                     for file in encrypted_files:
+#                         sub_zip.writestr(file["filename"], file["content"])
+#                         sub_zip.writestr(file["iv_filename"], file["iv_content"])
+
+#                     sub_zip.writestr(
+#                         "signatures.json", json.dumps(signatures, indent=2)
+#                     )
+#                     sub_zip.writestr(f"{recipient}.key.enc", enc_AES_key)
+#                     sub_zip.writestr(cert[0]["filename"], cert[0]["content"])
+
+#                 sub_zip_buffer.seek(0)
+#                 outer_zip.writestr(f"{recipient}.zip", sub_zip_buffer.read())
+
+#         outer_zip_buffer.seek(0)
+#         return StreamingResponse(
+#             outer_zip_buffer,
+#             media_type="application/x-zip-compressed",
+#             headers={
+#                 "Content-Disposition": f"attachment; filename=encrypted_packages.zip"
+#             },
+#         )
+
+
+# async def aes_turbo_decrypt_files(
+#     username: str,
+#     files: dict[str, bytes],
+#     db: AsyncSession,
+#     public_key,
+# ):
+#     # 1. 取得使用者私鑰
+#     user_pk_bytes, user_sk_bytes = await AES_RSA.get_user_keys(username, db)
+#     private_key = serialization.load_der_private_key(
+#         user_sk_bytes, password=None, backend=default_backend()
+#     )
+
+#     # 2. 解密 AES 金鑰
+#     aes_key_name = f"{username}.key.enc"
+#     if aes_key_name not in files:
+#         raise HTTPException(
+#             status_code=400, detail=f"{username}.key.enc 加密過屬於您的解密鑰遺失"
+#         )
+
+#     try:
+#         AES_key = private_key.decrypt(
+#             files[aes_key_name],
+#             padding.OAEP(
+#                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
+#                 algorithm=hashes.SHA256(),
+#                 label=None,
+#             ),
+#         )
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=400,
+#             detail=f"無法解密 AES 金鑰：{str(e)}，可能金鑰錯誤或您沒有權限瀏覽",
+#         )
+
+#     # 3. 解析簽章 JSON
+#     if "signatures.json" not in files:
+#         raise HTTPException(status_code=400, detail="簽名 signatures.json 遺失")
+
+#     signatures = json.loads(files["signatures.json"])
+
+#     # 4. 驗簽 + 解密每個檔案
+#     decrypted_files = []
+
+#     for file_info in signatures:
+#         enc_filename = file_info["filename"]
+#         signature_b64 = file_info["signature"]
+
+#         if enc_filename not in files:
+#             raise HTTPException(status_code=400, detail=f"加密檔 {enc_filename} 遺失")
+
+#         enc_content = files[enc_filename]
+#         iv_content = files[enc_filename + "_iv.txt"]
+#         signature = base64.b64decode(signature_b64)
+
+#         # 驗簽
+#         # try:
+#         #     public_key.verify(
+#         #         signature,
+#         #         enc_content,
+#         #         padding.PSS(
+#         #             mgf=padding.MGF1(hashes.SHA256()),
+#         #             salt_length=padding.PSS.MAX_LENGTH,
+#         #         ),
+#         #         hashes.SHA256(),
+#         #     )
+#         # except Exception as e:
+#         #     logger.exception(f"Signature verification failed for {enc_filename}")
+#         #     raise HTTPException(
+#         #         status_code=400,
+#         #         detail=f"Signature verification失敗，{enc_filename} 可能遭到竄改 aes_turbo_decrypt_files",
+#         #     )
+
+#         # AES-GCM 解密
+#         decrypted_file = await AES_RSA.decrypt_files_with_AES_turbo(
+#             enc_content, enc_filename, iv_content, AES_key
+#         )
+#         decrypted_files.append(decrypted_file)
+
+#     # 5. 封裝回 zip
+#     output_zip_buffer = BytesIO()
+#     with zipfile.ZipFile(output_zip_buffer, "w", zipfile.ZIP_DEFLATED) as out_zip:
+#         for f in decrypted_files:
+#             out_zip.writestr(f["filename"], f["content"])
+#     output_zip_buffer.seek(0)
+
+#     return StreamingResponse(output_zip_buffer, media_type="application/zip")
+
+
 async def aes_decrypt_files(
     username: str,
     files: dict[str, bytes],

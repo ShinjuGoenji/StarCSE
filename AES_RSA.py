@@ -1,6 +1,7 @@
 import base64
 from io import BytesIO
 import json
+import subprocess
 import zipfile
 from fastapi import FastAPI, Form, Request, UploadFile, File, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
@@ -99,3 +100,114 @@ def encrypt_AES_key(AES_key: bytes, user_pk: bytes) -> bytes:
         ),
     )
     return AES_key_enc
+
+
+# async def decrypt_files_with_AES_turbo(
+#     file: bytes, filename: str, iv_file: bytes, AES_key: bytes
+# ):
+#     key_hex = AES_key.hex().upper()
+#     base_dir = "./hal/aes_dec"
+#     cipher_in_dir = os.path.join(base_dir, "cipher_in")
+#     iv_in_dir = os.path.join(base_dir, "iv_in")
+#     plain_out_dir = os.path.join(base_dir, "plain_out")
+
+#     os.makedirs(cipher_in_dir, exist_ok=True)
+#     os.makedirs(iv_in_dir, exist_ok=True)
+#     os.makedirs(plain_out_dir, exist_ok=True)
+
+#     iv_filename = filename + "_iv.txt"
+#     cipher_path = os.path.join(cipher_in_dir, filename)
+#     iv_path = os.path.join(iv_in_dir, iv_filename)
+#     plain_filename = filename[:-8] if filename.endswith("_enc.bin") else filename
+#     plain_path = os.path.join(plain_out_dir, plain_filename)
+
+#     # 儲存 ciphertext
+#     with open(cipher_path, "wb") as f:
+#         f.write(file)
+
+#     # 儲存 iv
+#     with open(iv_path, "wb") as f:
+#         f.write(iv_file)
+
+#     # 執行解密命令
+#     cmd = f"./aes_dec {key_hex} {filename} {plain_filename}"
+#     try:
+#         subprocess.run(
+#             cmd,
+#             shell=True,
+#             cwd=base_dir,
+#             check=True,
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE,
+#         )
+#     except subprocess.CalledProcessError as e:
+#         raise RuntimeError(
+#             f"Decryption failed: ./aes_dec {key_hex} {filename} {plain_filename} {e.stderr.decode()}"
+#         )
+
+#     # 讀取解密後內容
+#     with open(plain_path, "rb") as f:
+#         plain_data = f.read()
+
+#     return {
+#         "filename": plain_filename,
+#         "content": plain_data,
+#     }
+
+
+# async def encrypt_files_with_AES_turbo(files: List[UploadFile], AES_key: bytes):
+#     key_hex = AES_key.hex().upper()
+#     base_dir = "./hal/aes_enc"
+#     plain_in_dir = os.path.join(base_dir, "plain_in")
+#     cipher_out_dir = os.path.join(base_dir, "cipher_out")
+#     iv_out_dir = os.path.join(base_dir, "iv_out")
+
+#     encrypted_files = []
+
+#     os.makedirs(plain_in_dir, exist_ok=True)
+#     os.makedirs(cipher_out_dir, exist_ok=True)
+#     os.makedirs(iv_out_dir, exist_ok=True)
+
+#     for file in files:
+#         filename = file.filename
+#         plain_path = os.path.join(plain_in_dir, filename)
+#         cipher_filename = filename + "_enc.bin"
+#         cipher_path = os.path.join(cipher_out_dir, cipher_filename)
+#         iv_filename = cipher_filename + "_iv.txt"
+#         iv_path = os.path.join(iv_out_dir, iv_filename)
+
+#         # 儲存 plaintext
+#         with open(plain_path, "wb") as f:
+#             content = await file.read()
+#             f.write(content)
+
+#         # 執行加密命令
+#         cmd = f"./aes_enc {key_hex} {filename} {cipher_filename}"
+#         try:
+#             subprocess.run(
+#                 cmd,
+#                 shell=True,
+#                 cwd=base_dir,
+#                 check=True,
+#                 stdout=subprocess.PIPE,
+#                 stderr=subprocess.PIPE,
+#             )
+#         except subprocess.CalledProcessError as e:
+#             raise RuntimeError(f"Encryption failed: {e.stderr.decode()}")
+
+#         # 讀取加密後內容與 IV
+#         with open(cipher_path, "rb") as f:
+#             cipher_data = f.read()
+#         with open(iv_path, "rb") as f:
+#             iv_data = f.read()
+
+#         encrypted_files.append(
+#             {
+#                 "filename": cipher_filename,
+#                 "content": cipher_data,
+#                 "iv_filename": iv_filename,
+#                 "iv_content": iv_data,
+#             }
+#         )
+
+#     return encrypted_files
